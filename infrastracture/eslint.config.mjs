@@ -18,6 +18,7 @@ export default [
       cdk: eslintCdkPlugin,
     },
     rules: {
+      "@typescript-eslint/no-unused-vars": "off",
       ...eslintCdkPlugin.configs.recommended.rules,
     },
   },
