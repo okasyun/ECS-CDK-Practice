@@ -1,17 +1,15 @@
 import * as cdk from "aws-cdk-lib";
-import { Template, Match } from "aws-cdk-lib/assertions";
-import * as EcsPractice from "../infrastracture/lib/ecs-practice-stack";
+import { Template } from "aws-cdk-lib/assertions";
+import { EcsPracticeStack } from "../lib/ecs-practice-stack";
+import { getStackProps } from "../lib/config";
 
-test("SQS Queue and SNS Topic Created", () => {
+test("Snapshot test", () => {
   const app = new cdk.App();
   // WHEN
-  const stack = new EcsPractice.EcsPracticeStack(app, "MyTestStack");
+  const stage = process.env.ENV || "Dev";
+  const stackProps = getStackProps(stage);
+  const stack = new EcsPracticeStack(app, `${stage}-EcsPractice`, stackProps);
   // THEN
-
   const template = Template.fromStack(stack);
-
-  template.hasResourceProperties("AWS::SQS::Queue", {
-    VisibilityTimeout: 300,
-  });
-  template.resourceCountIs("AWS::SNS::Topic", 1);
+  expect(template).toMatchSnapshot();
 });
