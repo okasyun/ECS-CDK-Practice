@@ -8,6 +8,7 @@ export const getStackProps = (stage: string): StackProps => {
           account: "637423478672",
           region: "ap-northeast-1",
         },
+        terminationProtection: true,
       };
     default:
       return {
