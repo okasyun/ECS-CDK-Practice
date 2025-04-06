@@ -11,7 +11,7 @@ export class NetworkResources extends Construct {
 
     // VPC作成
     const sbcntrVpc = new ec2.Vpc(this, "SbcntrVpc", {
-      vpcName: `${stage}-sbcntr-vpc`,
+      vpcName: `${stage}-sbcntrVpc`,
       ipAddresses: ec2.IpAddresses.cidr("10.0.0.0/16"),
       subnetConfiguration: [],
       enableDnsHostnames: true,
