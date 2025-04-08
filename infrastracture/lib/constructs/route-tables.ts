@@ -40,7 +40,7 @@ export class RouteTables extends Construct {
       {
         routeTableId: sbcntrRouteApp.ref,
         subnetId: this.subnets.container[0].ref,
-      }
+      },
     );
 
     new ec2.CfnSubnetRouteTableAssociation(
@@ -49,7 +49,7 @@ export class RouteTables extends Construct {
       {
         routeTableId: sbcntrRouteApp.ref,
         subnetId: this.subnets.container[1].ref,
-      }
+      },
     );
 
     // データベース用のルートテーブルの作成
@@ -74,7 +74,6 @@ export class RouteTables extends Construct {
       subnetId: this.subnets.db[1].ref,
     });
 
-
     // Ingress用のルートテーブルの作成
     const sbcntrRouteIngress = new ec2.CfnRouteTable(
       this,
@@ -87,7 +86,7 @@ export class RouteTables extends Construct {
             value: `${props.stage}-sbcntr-route-ingress`,
           },
         ],
-      }
+      },
     );
 
     // Ingress用のサブネットのルートテーブル関連付け
@@ -97,7 +96,7 @@ export class RouteTables extends Construct {
       {
         routeTableId: sbcntrRouteIngress.ref,
         subnetId: this.subnets.ingress[0].ref,
-      }
+      },
     );
 
     new ec2.CfnSubnetRouteTableAssociation(
@@ -106,7 +105,7 @@ export class RouteTables extends Construct {
       {
         routeTableId: sbcntrRouteIngress.ref,
         subnetId: this.subnets.ingress[1].ref,
-      }
+      },
     );
 
     // 管理用サーバー用のルートテーブル関連付け
@@ -116,7 +115,7 @@ export class RouteTables extends Construct {
       {
         routeTableId: sbcntrRouteIngress.ref,
         subnetId: this.subnets.management[0].ref,
-      }
+      },
     );
 
     new ec2.CfnSubnetRouteTableAssociation(
@@ -125,7 +124,7 @@ export class RouteTables extends Construct {
       {
         routeTableId: sbcntrRouteIngress.ref,
         subnetId: this.subnets.management[1].ref,
-      }
+      },
     );
 
     // インターネット接続用のデフォルトルートを作成

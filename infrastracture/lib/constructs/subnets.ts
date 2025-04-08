@@ -100,6 +100,34 @@ export class Subnets extends Construct {
           ],
         }),
       ],
+      // Egress周りのサブネット
+      egress: [
+        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateEgress1A", {
+          vpcId: this.vpcId,
+          cidrBlock: "10.0.248.0/24",
+          availabilityZone: this.azs[0],
+          mapPublicIpOnLaunch: false,
+          tags: [
+            {
+              key: "Name",
+              value: `${props.stage}-sbcntr-subnet-private-egress-1a`,
+            },
+          ],
+        }),
+        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateEgress1C", {
+          vpcId: this.vpcId,
+          cidrBlock: "10.0.249.0/24",
+          availabilityZone: this.azs[1],
+          mapPublicIpOnLaunch: false,
+          tags: [
+            {
+              key: "Name",
+              value: `${props.stage}-sbcntr-subnet-private-egress-1c`,
+            },
+          ],
+        }),
+      ],
+
       // 管理用サーバーのサブネット
       management: [
         new ec2.CfnSubnet(this, "SbcntrSubnetPublicManagement1A", {

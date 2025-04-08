@@ -33,7 +33,6 @@ export class NetworkResources extends Construct {
       vpcId: sbcntrVpc.vpcId,
       internetGatewayId: sbcntrIgw.ref,
     });
-    
 
     // セキュリティグループの作成
     const sbcntrSecurityGroups = new SecurityGroups(this, "SecurityGroups", {

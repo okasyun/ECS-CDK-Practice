@@ -17,7 +17,7 @@ export class SecurityGroups extends Construct {
 
     // Ingress用のセキュリティグループの作成
     const sbcntrSgIngress = new ec2.SecurityGroup(this, "SbcntrSgIngress", {
-      vpc: this.vpc,    
+      vpc: this.vpc,
       description: "Security group for ingress",
       allowAllOutbound: true,
     });
@@ -33,14 +33,20 @@ export class SecurityGroups extends Construct {
         allowAllOutbound: true,
       },
     );
-    Tags.of(sbcntrSgManagement).add("Name", `${props.stage}-sbcntr-sg-management`);
+    Tags.of(sbcntrSgManagement).add(
+      "Name",
+      `${props.stage}-sbcntr-sg-management`,
+    );
     // バックエンドアプリ用のセキュリティグループの作成
     const sbcntrSgContainer = new ec2.SecurityGroup(this, "SbcntrSgContainer", {
       vpc: this.vpc,
       description: "Security Group of backend app",
       allowAllOutbound: true,
     });
-    Tags.of(sbcntrSgContainer).add("Name", `${props.stage}-sbcntr-sg-container`);
+    Tags.of(sbcntrSgContainer).add(
+      "Name",
+      `${props.stage}-sbcntr-sg-container`,
+    );
 
     // フロントエンドアプリ用のセキュリティグループの作成
     const sbcntrSgFrontContainer = new ec2.SecurityGroup(
@@ -52,7 +58,10 @@ export class SecurityGroups extends Construct {
         allowAllOutbound: true,
       },
     );
-    Tags.of(sbcntrSgFrontContainer).add("Name", `${props.stage}-sbcntr-sg-front-container`);
+    Tags.of(sbcntrSgFrontContainer).add(
+      "Name",
+      `${props.stage}-sbcntr-sg-front-container`,
+    );
 
     // 内部用ロードバランサ用のセキュリティグループの生成
     const sbcntrSgInternal = new ec2.SecurityGroup(this, "SbcntrSgInternal", {
@@ -68,6 +77,14 @@ export class SecurityGroups extends Construct {
       allowAllOutbound: true,
     });
     Tags.of(sbcntrSgDb).add("Name", `${props.stage}-sbcntr-sg-db`);
+
+    // VPCエンドポイント用のセキュリティグループの作成
+    const sbcntrSgEgress = new ec2.SecurityGroup(this, "SbcntrSgEgress", {
+      vpc: this.vpc,
+      description: "Security Group of VPC Endpoint",
+      allowAllOutbound: true,
+    });
+    Tags.of(sbcntrSgEgress).add("Name", `${props.stage}-sbcntr-sg-vpce`);
 
     // Ingress用のセキュリティグループのルール設定
     sbcntrSgIngress.addIngressRule(
@@ -86,7 +103,7 @@ export class SecurityGroups extends Construct {
     sbcntrSgInternal.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
       ec2.Port.tcp(80),
-      "HTTP for management server"
+      "HTTP for management server",
     );
 
     // データベース用のセキュリティグループのルール設定
@@ -119,6 +136,24 @@ export class SecurityGroups extends Construct {
       ec2.Peer.securityGroupId(sbcntrSgInternal.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for internal lb",
+    );
+
+    // VPCエンドポイント用のセキュリティグループのルール設定
+    sbcntrSgEgress.addIngressRule(
+      ec2.Peer.securityGroupId(sbcntrSgContainer.securityGroupId),
+      ec2.Port.tcp(443),
+      "HTTPS for container app",
+    );
+    sbcntrSgEgress.addIngressRule(
+      ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
+      ec2.Port.tcp(443),
+      "HTTPS for front container app",
+    );
+
+    sbcntrSgEgress.addIngressRule(
+      ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
+      ec2.Port.tcp(443),
+      "HTTPS for management server",
     );
   }
 }
