@@ -4,6 +4,8 @@ import { EcsPracticeStackProps } from "../ecs-practice-stack";
 import { Subnets } from "./subnets";
 import { SecurityGroups } from "./security-groups";
 import { RouteTables } from "./route-tables";
+import { InterfaceVpcEndpoint } from "aws-cdk-lib/aws-ec2";
+import { Tags } from "aws-cdk-lib";
 export class NetworkResources extends Construct {
   constructor(scope: Construct, id: string, props: EcsPracticeStackProps) {
     super(scope, id);
@@ -19,7 +21,7 @@ export class NetworkResources extends Construct {
     });
 
     // サブネットの作成
-    const subnets = new Subnets(this, "Subnets", {
+    const sbcntrSubnets = new Subnets(this, "Subnets", {
       vpc: sbcntrVpc,
       stage,
     });
@@ -43,9 +45,22 @@ export class NetworkResources extends Construct {
     // ルートテーブルの関連付け
     const sbcntrRouteTables = new RouteTables(this, "RouteTables", {
       vpc: sbcntrVpc,
-      subnets: subnets.subnets,
+      subnets: sbcntrSubnets.subnets,
       igwId: sbcntrIgw.ref,
       stage,
     });
+
+    // ECRのインターフェース型VPCエンドポイントの作成
+    const sbcntrVpceEcrApi = new InterfaceVpcEndpoint(this, "SbcntrVpceEcrApi", {
+      vpc: sbcntrVpc,
+      service: ec2.InterfaceVpcEndpointAwsService.ECR,
+      subnets: {
+        subnets: sbcntrSubnets.subnets.egress.map((subnet) => ec2.Subnet.fromSubnetId(this, `subnet-${subnet.ref}`, subnet.ref)),
+      },
+      securityGroups: [sbcntrSecurityGroups.getEgressSecurityGroup()],
+    });
+    Tags.of(sbcntrVpceEcrApi).add("Name", `${stage}-sbcntr-vpce-ecr-api`);
+
+    // S3用のゲートウェイ型VPCエンドポイントの作成
   }
 }

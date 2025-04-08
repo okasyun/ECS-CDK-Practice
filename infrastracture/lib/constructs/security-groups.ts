@@ -9,6 +9,7 @@ interface SecurityGroupProps extends EcsPracticeStackProps {
 
 export class SecurityGroups extends Construct {
   readonly vpc: ec2.IVpc;
+  public readonly sbcntrSgEgress: ec2.ISecurityGroup;
 
   constructor(scope: Construct, id: string, props: SecurityGroupProps) {
     super(scope, id);
@@ -31,11 +32,11 @@ export class SecurityGroups extends Construct {
         vpc: this.vpc,
         description: "Security Group of management server",
         allowAllOutbound: true,
-      },
+      }
     );
     Tags.of(sbcntrSgManagement).add(
       "Name",
-      `${props.stage}-sbcntr-sg-management`,
+      `${props.stage}-sbcntr-sg-management`
     );
     // バックエンドアプリ用のセキュリティグループの作成
     const sbcntrSgContainer = new ec2.SecurityGroup(this, "SbcntrSgContainer", {
@@ -45,7 +46,7 @@ export class SecurityGroups extends Construct {
     });
     Tags.of(sbcntrSgContainer).add(
       "Name",
-      `${props.stage}-sbcntr-sg-container`,
+      `${props.stage}-sbcntr-sg-container`
     );
 
     // フロントエンドアプリ用のセキュリティグループの作成
@@ -56,11 +57,11 @@ export class SecurityGroups extends Construct {
         vpc: this.vpc,
         description: "Security Group of front container app",
         allowAllOutbound: true,
-      },
+      }
     );
     Tags.of(sbcntrSgFrontContainer).add(
       "Name",
-      `${props.stage}-sbcntr-sg-front-container`,
+      `${props.stage}-sbcntr-sg-front-container`
     );
 
     // 内部用ロードバランサ用のセキュリティグループの生成
@@ -79,81 +80,85 @@ export class SecurityGroups extends Construct {
     Tags.of(sbcntrSgDb).add("Name", `${props.stage}-sbcntr-sg-db`);
 
     // VPCエンドポイント用のセキュリティグループの作成
-    const sbcntrSgEgress = new ec2.SecurityGroup(this, "SbcntrSgEgress", {
+    this.sbcntrSgEgress = new ec2.SecurityGroup(this, "SbcntrSgEgress", {
       vpc: this.vpc,
       description: "Security Group of VPC Endpoint",
       allowAllOutbound: true,
     });
-    Tags.of(sbcntrSgEgress).add("Name", `${props.stage}-sbcntr-sg-vpce`);
+    Tags.of(this.sbcntrSgEgress).add("Name", `${props.stage}-sbcntr-sg-vpce`);
 
     // Ingress用のセキュリティグループのルール設定
     sbcntrSgIngress.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(80),
-      "Allow HTTP traffic on port 80",
+      "Allow HTTP traffic on port 80"
     );
 
     // 内部用ロードバランサ用のセキュリティグループのルール設定
     sbcntrSgInternal.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
       ec2.Port.tcp(80),
-      "HTTP for front container",
+      "HTTP for front container"
     );
 
     sbcntrSgInternal.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
       ec2.Port.tcp(80),
-      "HTTP for management server",
+      "HTTP for management server"
     );
 
     // データベース用のセキュリティグループのルール設定
     sbcntrSgDb.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgContainer.securityGroupId),
       ec2.Port.tcp(3306),
-      "Allow MySQL protocol from backend app",
+      "Allow MySQL protocol from backend app"
     );
     sbcntrSgDb.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
       ec2.Port.tcp(3306),
-      "Allow MySQL protocol from frontend app",
+      "Allow MySQL protocol from frontend app"
     );
 
     sbcntrSgDb.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
       ec2.Port.tcp(3306),
-      "Allow MySQL protocol from management server",
+      "Allow MySQL protocol from management server"
     );
 
     // フロントエンドアプリ用のセキュリティグループのルール設定
     sbcntrSgFrontContainer.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgIngress.securityGroupId),
       ec2.Port.tcp(80),
-      "HTTP for Ingress",
+      "HTTP for Ingress"
     );
 
     // バックエンドアプリ用のセキュリティグループのルール設定
     sbcntrSgContainer.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgInternal.securityGroupId),
       ec2.Port.tcp(80),
-      "HTTP for internal lb",
+      "HTTP for internal lb"
     );
 
     // VPCエンドポイント用のセキュリティグループのルール設定
-    sbcntrSgEgress.addIngressRule(
+    this.sbcntrSgEgress.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgContainer.securityGroupId),
       ec2.Port.tcp(443),
-      "HTTPS for container app",
+      "HTTPS for container app"
     );
-    sbcntrSgEgress.addIngressRule(
+    this.sbcntrSgEgress.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
       ec2.Port.tcp(443),
-      "HTTPS for front container app",
+      "HTTPS for front container app"
     );
 
-    sbcntrSgEgress.addIngressRule(
+    this.sbcntrSgEgress.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
       ec2.Port.tcp(443),
-      "HTTPS for management server",
+      "HTTPS for management server"
     );
+  }
+
+  getEgressSecurityGroup(): ec2.ISecurityGroup {
+    return this.sbcntrSgEgress;
   }
 }
