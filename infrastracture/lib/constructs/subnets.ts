@@ -9,22 +9,20 @@ interface SubnetProps extends EcsPracticeStackProps {
 }
 
 export class Subnets extends Construct {
-  readonly vpcId: string;
-  readonly azs: string[];
-  readonly subnets: Record<string, CfnSubnet[]>;
+  public readonly subnets: Record<string, CfnSubnet[]>;
 
   constructor(scope: Construct, id: string, props: SubnetProps) {
     super(scope, id);
 
-    this.vpcId = props.vpc.vpcId;
-    this.azs = props.vpc.availabilityZones;
+    const vpcId = props.vpc.vpcId;
+    const azs = props.vpc.availabilityZones;
     this.subnets = {
       // コンテナサブネット
       container: [
         new ec2.CfnSubnet(this, "SbcntrSubnetPrivateContainer1A", {
-          vpcId: this.vpcId,
+          vpcId,
           cidrBlock: "10.0.8.0/24",
-          availabilityZone: this.azs[0],
+          availabilityZone: azs[0],
           mapPublicIpOnLaunch: false,
           tags: [
             {
@@ -34,9 +32,9 @@ export class Subnets extends Construct {
           ],
         }),
         new ec2.CfnSubnet(this, "SbcntrSubnetPrivateContainer1C", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.9.0/24",
-          availabilityZone: this.azs[1],
+          availabilityZone: azs[1],
           mapPublicIpOnLaunch: false,
           tags: [
             {
@@ -49,9 +47,9 @@ export class Subnets extends Construct {
       // データベースサブネット
       db: [
         new ec2.CfnSubnet(this, "SbcntrSubnetPrivateDb1A", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.16.0/24",
-          availabilityZone: this.azs[0],
+          availabilityZone: azs[0],
           mapPublicIpOnLaunch: false,
           tags: [
             {
@@ -61,9 +59,9 @@ export class Subnets extends Construct {
           ],
         }),
         new ec2.CfnSubnet(this, "SbcntrSubnetPrivateDb1C", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.17.0/24",
-          availabilityZone: this.azs[1],
+          availabilityZone: azs[1],
           mapPublicIpOnLaunch: false,
           tags: [
             {
@@ -76,9 +74,9 @@ export class Subnets extends Construct {
       // Ingress周りのサブネット
       ingress: [
         new ec2.CfnSubnet(this, "SbcntrSubnetPublicIngress1A", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.0.0/24",
-          availabilityZone: this.azs[0],
+          availabilityZone: azs[0],
           mapPublicIpOnLaunch: true,
           tags: [
             {
@@ -88,9 +86,9 @@ export class Subnets extends Construct {
           ],
         }),
         new ec2.CfnSubnet(this, "SbcntrSubnetPublicIngress1C", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.1.0/24",
-          availabilityZone: this.azs[1],
+          availabilityZone: azs[1],
           mapPublicIpOnLaunch: true,
           tags: [
             {
@@ -103,9 +101,9 @@ export class Subnets extends Construct {
       // Egress周りのサブネット
       egress: [
         new ec2.CfnSubnet(this, "SbcntrSubnetPrivateEgress1A", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.248.0/24",
-          availabilityZone: this.azs[0],
+          availabilityZone: azs[0],
           mapPublicIpOnLaunch: false,
           tags: [
             {
@@ -115,9 +113,9 @@ export class Subnets extends Construct {
           ],
         }),
         new ec2.CfnSubnet(this, "SbcntrSubnetPrivateEgress1C", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.249.0/24",
-          availabilityZone: this.azs[1],
+          availabilityZone: azs[1],
           mapPublicIpOnLaunch: false,
           tags: [
             {
@@ -131,9 +129,9 @@ export class Subnets extends Construct {
       // 管理用サーバーのサブネット
       management: [
         new ec2.CfnSubnet(this, "SbcntrSubnetPublicManagement1A", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.240.0/24",
-          availabilityZone: this.azs[0],
+          availabilityZone: azs[0],
           mapPublicIpOnLaunch: true,
           tags: [
             {
@@ -143,9 +141,9 @@ export class Subnets extends Construct {
           ],
         }),
         new ec2.CfnSubnet(this, "SbcntrSubnetPublicManagement1C", {
-          vpcId: this.vpcId,
+          vpcId: vpcId,
           cidrBlock: "10.0.241.0/24",
-          availabilityZone: this.azs[1],
+          availabilityZone: azs[1],
           mapPublicIpOnLaunch: true,
           tags: [
             {

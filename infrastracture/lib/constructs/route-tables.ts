@@ -11,20 +11,16 @@ interface RouteTableProps extends EcsPracticeStackProps {
 }
 
 export class RouteTables extends Construct {
-  readonly vpc: ec2.IVpc;
-  readonly subnets: Record<string, CfnSubnet[]>;
-  readonly igwId: string;
-
   constructor(scope: Construct, id: string, props: RouteTableProps) {
     super(scope, id);
 
-    this.vpc = props.vpc;
-    this.subnets = props.subnets;
-    this.igwId = props.igwId;
+    const vpc = props.vpc;
+    const subnets = props.subnets;
+    const igwId = props.igwId;
 
     // アプリ用のルートテーブルの作成
     const sbcntrRouteApp = new ec2.CfnRouteTable(this, "SbcntrRouteApp", {
-      vpcId: this.vpc.vpcId,
+      vpcId: vpc.vpcId,
       tags: [
         {
           key: "Name",
@@ -39,7 +35,7 @@ export class RouteTables extends Construct {
       "SbcntrRouteAppAssociation1A",
       {
         routeTableId: sbcntrRouteApp.ref,
-        subnetId: this.subnets.container[0].ref,
+        subnetId: subnets.container[0].ref,
       },
     );
 
@@ -48,13 +44,13 @@ export class RouteTables extends Construct {
       "SbcntrRouteAppAssociation1C",
       {
         routeTableId: sbcntrRouteApp.ref,
-        subnetId: this.subnets.container[1].ref,
+        subnetId: subnets.container[1].ref,
       },
     );
 
     // データベース用のルートテーブルの作成
     const sbcntrRouteDb = new ec2.CfnRouteTable(this, "SbcntrRouteDb", {
-      vpcId: this.vpc.vpcId,
+      vpcId: vpc.vpcId,
       tags: [
         {
           key: "Name",
@@ -66,12 +62,12 @@ export class RouteTables extends Construct {
     // データベース用のサブネットのルートテーブル関連付け
     new ec2.CfnSubnetRouteTableAssociation(this, "SbcntrRouteDbAssociation1A", {
       routeTableId: sbcntrRouteDb.ref,
-      subnetId: this.subnets.db[0].ref,
+      subnetId: subnets.db[0].ref,
     });
 
     new ec2.CfnSubnetRouteTableAssociation(this, "SbcntrRouteDbAssociation1C", {
       routeTableId: sbcntrRouteDb.ref,
-      subnetId: this.subnets.db[1].ref,
+      subnetId: subnets.db[1].ref,
     });
 
     // Ingress用のルートテーブルの作成
@@ -79,7 +75,7 @@ export class RouteTables extends Construct {
       this,
       "SbcntrRouteIngress",
       {
-        vpcId: this.vpc.vpcId,
+        vpcId: vpc.vpcId,
         tags: [
           {
             key: "Name",
@@ -95,7 +91,7 @@ export class RouteTables extends Construct {
       "SbcntrRouteIngressAssociation1A",
       {
         routeTableId: sbcntrRouteIngress.ref,
-        subnetId: this.subnets.ingress[0].ref,
+        subnetId: subnets.ingress[0].ref,
       },
     );
 
@@ -104,7 +100,7 @@ export class RouteTables extends Construct {
       "SbcntrRouteIngressAssociation1C",
       {
         routeTableId: sbcntrRouteIngress.ref,
-        subnetId: this.subnets.ingress[1].ref,
+        subnetId: subnets.ingress[1].ref,
       },
     );
 
@@ -114,7 +110,7 @@ export class RouteTables extends Construct {
       "SbcntrRouteManagementAssociation1A",
       {
         routeTableId: sbcntrRouteIngress.ref,
-        subnetId: this.subnets.management[0].ref,
+        subnetId: subnets.management[0].ref,
       },
     );
 
@@ -123,7 +119,7 @@ export class RouteTables extends Construct {
       "SbcntrRouteManagementAssociation1C",
       {
         routeTableId: sbcntrRouteIngress.ref,
-        subnetId: this.subnets.management[1].ref,
+        subnetId: subnets.management[1].ref,
       },
     );
 
@@ -131,7 +127,7 @@ export class RouteTables extends Construct {
     new ec2.CfnRoute(this, "SbcntrRouteIngressDefault", {
       routeTableId: sbcntrRouteIngress.ref,
       destinationCidrBlock: "0.0.0.0/0",
-      gatewayId: this.igwId,
+      gatewayId: igwId,
     });
   }
 }

@@ -51,16 +51,41 @@ export class NetworkResources extends Construct {
     });
 
     // ECRのインターフェース型VPCエンドポイントの作成
-    const sbcntrVpceEcrApi = new InterfaceVpcEndpoint(this, "SbcntrVpceEcrApi", {
-      vpc: sbcntrVpc,
-      service: ec2.InterfaceVpcEndpointAwsService.ECR,
-      subnets: {
-        subnets: sbcntrSubnets.subnets.egress.map((subnet) => ec2.Subnet.fromSubnetId(this, `subnet-${subnet.ref}`, subnet.ref)),
+    const sbcntrVpceEcrApi = new InterfaceVpcEndpoint(
+      this,
+      "SbcntrVpceEcrApi",
+      {
+        vpc: sbcntrVpc,
+        service: ec2.InterfaceVpcEndpointAwsService.ECR,
+        subnets: {
+          subnets: sbcntrSubnets.subnets.egress.map((subnet, index) =>
+            ec2.Subnet.fromSubnetId(
+              this,
+              `subnet-egress-${index}-for-vpce-ecr-api`,
+              subnet.ref,
+            ),
+          ),
+        },
+        securityGroups: [sbcntrSecurityGroups.getEgressSecurityGroup()],
       },
-      securityGroups: [sbcntrSecurityGroups.getEgressSecurityGroup()],
-    });
+    );
     Tags.of(sbcntrVpceEcrApi).add("Name", `${stage}-sbcntr-vpce-ecr-api`);
 
+    // DKRも作成
+    const sbcntrVpceDkr = new InterfaceVpcEndpoint(this, "SbcntrVpceDkr", {
+      vpc: sbcntrVpc,
+      service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+      subnets: {
+        subnets: sbcntrSubnets.subnets.egress.map((subnet, index) =>
+          ec2.Subnet.fromSubnetId(
+            this,
+            `subnet-egress-${index}-for-vpce-dkr`,
+            subnet.ref,
+          ),
+        ),
+      },
+    });
+    Tags.of(sbcntrVpceDkr).add("Name", `${stage}-sbcntr-vpce-dkr`);
     // S3用のゲートウェイ型VPCエンドポイントの作成
   }
 }
