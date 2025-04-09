@@ -11,6 +11,8 @@ interface RouteTableProps extends EcsPracticeStackProps {
 }
 
 export class RouteTables extends Construct {
+  public readonly sbcntrRouteAppRef: string;
+
   constructor(scope: Construct, id: string, props: RouteTableProps) {
     super(scope, id);
 
@@ -28,13 +30,14 @@ export class RouteTables extends Construct {
         },
       ],
     });
+    this.sbcntrRouteAppRef = sbcntrRouteApp.ref;
 
     // アプリ用のサブネットのルートテーブル関連付け
     new ec2.CfnSubnetRouteTableAssociation(
       this,
       "SbcntrRouteAppAssociation1A",
       {
-        routeTableId: sbcntrRouteApp.ref,
+        routeTableId: this.sbcntrRouteAppRef,
         subnetId: subnets.container[0].ref,
       },
     );
@@ -43,7 +46,7 @@ export class RouteTables extends Construct {
       this,
       "SbcntrRouteAppAssociation1C",
       {
-        routeTableId: sbcntrRouteApp.ref,
+        routeTableId: this.sbcntrRouteAppRef,
         subnetId: subnets.container[1].ref,
       },
     );

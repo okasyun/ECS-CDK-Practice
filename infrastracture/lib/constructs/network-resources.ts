@@ -86,6 +86,14 @@ export class NetworkResources extends Construct {
       },
     });
     Tags.of(sbcntrVpceDkr).add("Name", `${stage}-sbcntr-vpce-dkr`);
+
     // S3用のゲートウェイ型VPCエンドポイントの作成
+    const sbcntrVpceS3 = new ec2.CfnVPCEndpoint(this, "S3GatewayEndpoint", {
+      serviceName: `com.amazonaws.ap-northeast-1.s3`,
+      vpcEndpointType: "Gateway",
+      vpcId: sbcntrVpc.vpcId,
+      routeTableIds: [sbcntrRouteTables.sbcntrRouteAppRef],
+    });
+    Tags.of(sbcntrVpceS3).add("Name", `${stage}-sbcntr-vpce-s3`);
   }
 }
