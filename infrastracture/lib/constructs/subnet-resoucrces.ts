@@ -9,7 +9,12 @@ interface SubnetProps extends EcsPracticeStackProps {
   readonly stage: string;
 }
 
-export type SubnetType = "container" | "db" | "ingress" | "egress" | "management";
+export type SubnetType =
+  | "container"
+  | "db"
+  | "ingress"
+  | "egress"
+  | "management";
 
 export interface ISubnetf {
   getL2Subnets(subnetType: SubnetType): ISubnet[];
@@ -165,7 +170,7 @@ export class SubnetResources extends Construct implements ISubnetf {
   }
   public getL2Subnets(subnetType: SubnetType): ec2.ISubnet[] {
     return this.subnets[subnetType].map((subnet, index) =>
-      ec2.Subnet.fromSubnetId(this, `${subnetType}-l2-${index}`, subnet.ref)
+      ec2.Subnet.fromSubnetId(this, `${subnetType}-l2-${index}`, subnet.ref),
     );
   }
 }

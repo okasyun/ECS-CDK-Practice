@@ -12,13 +12,23 @@ export class EcsPracticeStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsPracticeStackProps) {
     super(scope, id, props);
 
-    const networkResources = new NetworkResources(this, "NetworkResources", props);
+    const networkResources = new NetworkResources(
+      this,
+      "NetworkResources",
+      props,
+    );
     const albResources = new AlbResources(this, "AlbResources", {
       vpc: networkResources.sbcntrVpc,
       subnets: networkResources.sbcntrSubnets.getL2Subnets("ingress"),
-      securityGroups: [networkResources.sbcntrSecurityGroups.getInternalSecurityGroup()],
+      securityGroups: [
+        networkResources.sbcntrSecurityGroups.getInternalSecurityGroup(),
+      ],
       ...props,
     });
-    const repositoryResources = new RepositoryResources(this, "RepositoryResources", props);
+    const repositoryResources = new RepositoryResources(
+      this,
+      "RepositoryResources",
+      props,
+    );
   }
 }

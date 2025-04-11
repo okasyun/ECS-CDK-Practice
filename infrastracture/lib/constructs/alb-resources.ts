@@ -1,7 +1,10 @@
 import { Construct } from "constructs";
 import { EcsPracticeStackProps } from "../ecs-practice-stack";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import { ApplicationLoadBalancer, ApplicationProtocol, TargetType } from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import {
+  ApplicationLoadBalancer,
+  ApplicationProtocol,
+} from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Duration } from "aws-cdk-lib";
 
 interface AlbResourcesProps extends EcsPracticeStackProps {
@@ -18,7 +21,7 @@ export class AlbResources extends Construct {
     const internalAlb = new ApplicationLoadBalancer(this, "InternalAlb", {
       vpc,
       vpcSubnets: {
-    subnets
+        subnets,
       },
       securityGroup: securityGroups[0],
       internetFacing: false,

@@ -23,6 +23,7 @@ export class NetworkResources extends Construct {
       enableDnsHostnames: true,
       enableDnsSupport: true,
     });
+    Tags.of(this.sbcntrVpc).add("Name", `${stage}-sbcntr-vpc`);
 
     // サブネットの作成
     this.sbcntrSubnets = new SubnetResources(this, "Subnets", {
@@ -65,7 +66,7 @@ export class NetworkResources extends Construct {
           subnets: this.sbcntrSubnets.getL2Subnets("egress"),
         },
         securityGroups: [this.sbcntrSecurityGroups.getEgressSecurityGroup()],
-      }
+      },
     );
     Tags.of(sbcntrVpceEcrApi).add("Name", `${stage}-sbcntr-vpce-ecr-api`);
 
@@ -74,7 +75,7 @@ export class NetworkResources extends Construct {
       vpc: this.sbcntrVpc,
       service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
       subnets: {
-        subnets: this.sbcntrSubnets.getL2Subnets("egress")
+        subnets: this.sbcntrSubnets.getL2Subnets("egress"),
       },
     });
     Tags.of(sbcntrVpceDkr).add("Name", `${stage}-sbcntr-vpce-dkr`);
@@ -98,6 +99,4 @@ export class NetworkResources extends Construct {
     });
     Tags.of(sbcntrVpceLogs).add("Name", `${stage}-sbcntr-vpce-logs`);
   }
-
-  
 }

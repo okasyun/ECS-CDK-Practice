@@ -74,7 +74,10 @@ export class SecurityGroups extends Construct implements ISecurityGroup {
       description: " Security group for internal load balancer",
       allowAllOutbound: true,
     });
-    Tags.of(this.sbcntrSgInternal).add("Name", `${props.stage}-sbcntr-sg-internal`);
+    Tags.of(this.sbcntrSgInternal).add(
+      "Name",
+      `${props.stage}-sbcntr-sg-internal`,
+    );
     // データベース用のセキュリティグループの作成
     const sbcntrSgDb = new ec2.SecurityGroup(this, "SbcntrSgDb", {
       vpc,
