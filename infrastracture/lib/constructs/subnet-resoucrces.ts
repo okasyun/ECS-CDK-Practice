@@ -2,13 +2,21 @@ import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 import { EcsPracticeStackProps } from "../ecs-practice-stack";
 import { CfnSubnet } from "aws-cdk-lib/aws-ec2";
+import { ISubnet } from "aws-cdk-lib/aws-ec2";
 
 interface SubnetProps extends EcsPracticeStackProps {
   readonly vpc: ec2.IVpc;
   readonly stage: string;
 }
 
-export class Subnets extends Construct {
+export type SubnetType = "container" | "db" | "ingress" | "egress" | "management";
+
+export interface ISubnetf {
+  getL2Subnets(subnetType: SubnetType): ISubnet[];
+  readonly subnets: Record<string, CfnSubnet[]>;
+}
+
+export class SubnetResources extends Construct implements ISubnetf {
   public readonly subnets: Record<string, CfnSubnet[]>;
 
   constructor(scope: Construct, id: string, props: SubnetProps) {
@@ -154,5 +162,10 @@ export class Subnets extends Construct {
         }),
       ],
     };
+  }
+  public getL2Subnets(subnetType: SubnetType): ec2.ISubnet[] {
+    return this.subnets[subnetType].map((subnet, index) =>
+      ec2.Subnet.fromSubnetId(this, `${subnetType}-l2-${index}`, subnet.ref)
+    );
   }
 }

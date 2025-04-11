@@ -7,9 +7,14 @@ interface SecurityGroupProps extends EcsPracticeStackProps {
   readonly stage: string;
 }
 
-export class SecurityGroups extends Construct {
-  private readonly sbcntrSgEgress: ec2.ISecurityGroup;
+export interface ISecurityGroup {
+  getEgressSecurityGroup(): ec2.ISecurityGroup;
+  getInternalSecurityGroup(): ec2.ISecurityGroup;
+}
 
+export class SecurityGroups extends Construct implements ISecurityGroup {
+  private readonly sbcntrSgEgress: ec2.ISecurityGroup;
+  private readonly sbcntrSgInternal: ec2.ISecurityGroup;
   constructor(scope: Construct, id: string, props: SecurityGroupProps) {
     super(scope, id);
 
@@ -64,12 +69,12 @@ export class SecurityGroups extends Construct {
     );
 
     // 内部用ロードバランサ用のセキュリティグループの生成
-    const sbcntrSgInternal = new ec2.SecurityGroup(this, "SbcntrSgInternal", {
+    this.sbcntrSgInternal = new ec2.SecurityGroup(this, "SbcntrSgInternal", {
       vpc,
       description: " Security group for internal load balancer",
       allowAllOutbound: true,
     });
-    Tags.of(sbcntrSgInternal).add("Name", `${props.stage}-sbcntr-sg-internal`);
+    Tags.of(this.sbcntrSgInternal).add("Name", `${props.stage}-sbcntr-sg-internal`);
     // データベース用のセキュリティグループの作成
     const sbcntrSgDb = new ec2.SecurityGroup(this, "SbcntrSgDb", {
       vpc,
@@ -94,13 +99,13 @@ export class SecurityGroups extends Construct {
     );
 
     // 内部用ロードバランサ用のセキュリティグループのルール設定
-    sbcntrSgInternal.addIngressRule(
+    this.sbcntrSgInternal.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for front container",
     );
 
-    sbcntrSgInternal.addIngressRule(
+    this.sbcntrSgInternal.addIngressRule(
       ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for management server",
@@ -133,7 +138,7 @@ export class SecurityGroups extends Construct {
 
     // バックエンドアプリ用のセキュリティグループのルール設定
     sbcntrSgContainer.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgInternal.securityGroupId),
+      ec2.Peer.securityGroupId(this.sbcntrSgInternal.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for internal lb",
     );
@@ -159,5 +164,8 @@ export class SecurityGroups extends Construct {
 
   getEgressSecurityGroup(): ec2.ISecurityGroup {
     return this.sbcntrSgEgress;
+  }
+  getInternalSecurityGroup(): ec2.ISecurityGroup {
+    return this.sbcntrSgInternal;
   }
 }
