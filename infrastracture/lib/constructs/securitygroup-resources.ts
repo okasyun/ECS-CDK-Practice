@@ -8,176 +8,181 @@ interface SecurityGroupProps extends EcsPracticeStackProps {
 }
 
 export interface ISecurityGroupResources {
-  getEgressSecurityGroup(): ec2.ISecurityGroup;
-  getInternalSecurityGroup(): ec2.ISecurityGroup;
+  readonly egress: ec2.ISecurityGroup;
+  readonly internal: ec2.ISecurityGroup;
+  readonly management: ec2.ISecurityGroup;
+  readonly container: ec2.ISecurityGroup;
+  readonly frontContainer: ec2.ISecurityGroup;
+  readonly db: ec2.ISecurityGroup;
+  readonly vpcEndpoint: ec2.ISecurityGroup;
+  readonly ingress: ec2.ISecurityGroup;
 }
 
 export class SecurityGroupResources
   extends Construct
   implements ISecurityGroupResources
 {
-  private readonly sbcntrSgEgress: ec2.ISecurityGroup;
-  private readonly sbcntrSgInternal: ec2.ISecurityGroup;
+  readonly egress: ec2.ISecurityGroup;
+  readonly internal: ec2.ISecurityGroup;
+  readonly management: ec2.ISecurityGroup;
+  readonly container: ec2.ISecurityGroup;
+  readonly frontContainer: ec2.ISecurityGroup;
+  readonly db: ec2.ISecurityGroup;
+  readonly vpcEndpoint: ec2.ISecurityGroup;
+  readonly ingress: ec2.ISecurityGroup;
   constructor(scope: Construct, id: string, props: SecurityGroupProps) {
     super(scope, id);
 
     const vpc = props.vpc;
 
     // Ingress用のセキュリティグループの作成
-    const sbcntrSgIngress = new ec2.SecurityGroup(this, "SbcntrSgIngress", {
+    this.ingress = new ec2.SecurityGroup(this, "SgIngress", {
       vpc,
       description: "Security group for ingress",
       allowAllOutbound: true,
     });
-    Tags.of(sbcntrSgIngress).add("Name", `${props.stage}-sbcntr-sg-ingress`);
+    Tags.of(this.ingress).add("Name", `${props.stage}--sg-ingress`);
 
     // 管理用サーバー用のセキュリティグループの作成
-    const sbcntrSgManagement = new ec2.SecurityGroup(
+      this.management = new ec2.SecurityGroup(
       this,
-      "SbcntrSgManagement",
+      "SgManagement",
       {
         vpc,
         description: "Security Group of management server",
         allowAllOutbound: true,
       },
     );
-    Tags.of(sbcntrSgManagement).add(
+    Tags.of(this.management).add(
       "Name",
-      `${props.stage}-sbcntr-sg-management`,
+      `${props.stage}-sg-management`,
     );
     // バックエンドアプリ用のセキュリティグループの作成
-    const sbcntrSgContainer = new ec2.SecurityGroup(this, "SbcntrSgContainer", {
+    this.container = new ec2.SecurityGroup(this, "SgContainer", {
       vpc,
       description: "Security Group of backend app",
       allowAllOutbound: true,
     });
-    Tags.of(sbcntrSgContainer).add(
+    Tags.of(this.container).add(
       "Name",
-      `${props.stage}-sbcntr-sg-container`,
+      `${props.stage}-sg-container`,
     );
 
     // フロントエンドアプリ用のセキュリティグループの作成
-    const sbcntrSgFrontContainer = new ec2.SecurityGroup(
+    this.frontContainer = new ec2.SecurityGroup(
       this,
-      "SbcntrSgFrontContainer",
+      "SgFrontContainer",
       {
         vpc,
         description: "Security Group of front container app",
         allowAllOutbound: true,
       },
     );
-    Tags.of(sbcntrSgFrontContainer).add(
+    Tags.of(this.frontContainer).add(
       "Name",
-      `${props.stage}-sbcntr-sg-front-container`,
+      `${props.stage}-sg-front-container`,
     );
 
     // 内部用ロードバランサ用のセキュリティグループの生成
-    this.sbcntrSgInternal = new ec2.SecurityGroup(this, "SbcntrSgInternal", {
+    this.internal = new ec2.SecurityGroup(this, "SgInternal", {
       vpc,
       description: " Security group for internal load balancer",
       allowAllOutbound: true,
     });
-    Tags.of(this.sbcntrSgInternal).add(
+    Tags.of(this.internal).add(
       "Name",
-      `${props.stage}-sbcntr-sg-internal`,
+      `${props.stage}-sg-internal`,
     );
     // データベース用のセキュリティグループの作成
-    const sbcntrSgDb = new ec2.SecurityGroup(this, "SbcntrSgDb", {
+    this.db = new ec2.SecurityGroup(this, "SgDb", {
       vpc,
       description: "Security Group of database",
       allowAllOutbound: true,
     });
-    Tags.of(sbcntrSgDb).add("Name", `${props.stage}-sbcntr-sg-db`);
+    Tags.of(this.db).add("Name", `${props.stage}-sg-db`);
 
     // VPCエンドポイント用のセキュリティグループの作成
-    this.sbcntrSgEgress = new ec2.SecurityGroup(this, "SbcntrSgEgress", {
+    this.egress = new ec2.SecurityGroup(this, "SgEgress", {
       vpc,
       description: "Security Group of VPC Endpoint",
       allowAllOutbound: true,
     });
-    Tags.of(this.sbcntrSgEgress).add("Name", `${props.stage}-sbcntr-sg-vpce`);
+    Tags.of(this.egress).add("Name", `${props.stage}-sg-vpce`);
 
     // Ingress用のセキュリティグループのルール設定
-    sbcntrSgIngress.addIngressRule(
+    this.ingress.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(80),
       "Allow HTTP traffic on port 80",
     );
 
     // 内部用ロードバランサ用のセキュリティグループのルール設定
-    this.sbcntrSgInternal.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
+    this.internal.addIngressRule(
+      ec2.Peer.securityGroupId(this.frontContainer.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for front container",
     );
 
-    this.sbcntrSgInternal.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
+    this.internal.addIngressRule(
+      ec2.Peer.securityGroupId(this.management.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for management server",
     );
 
-    this.sbcntrSgInternal.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
+    this.internal.addIngressRule(
+      ec2.Peer.securityGroupId(this.management.securityGroupId),
       ec2.Port.tcp(10080),
       "Test port form management server",
     );
 
     // データベース用のセキュリティグループのルール設定
-    sbcntrSgDb.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgContainer.securityGroupId),
+    this.db.addIngressRule(
+      ec2.Peer.securityGroupId(this.container.securityGroupId),
       ec2.Port.tcp(3306),
       "Allow MySQL protocol from backend app",
     );
-    sbcntrSgDb.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
+    this.db.addIngressRule(
+      ec2.Peer.securityGroupId(this.frontContainer.securityGroupId),
       ec2.Port.tcp(3306),
       "Allow MySQL protocol from frontend app",
     );
 
-    sbcntrSgDb.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
+    this.db.addIngressRule(
+      ec2.Peer.securityGroupId(this.management.securityGroupId),
       ec2.Port.tcp(3306),
       "Allow MySQL protocol from management server",
     );
 
     // フロントエンドアプリ用のセキュリティグループのルール設定
-    sbcntrSgFrontContainer.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgIngress.securityGroupId),
+    this.frontContainer.addIngressRule(
+      ec2.Peer.securityGroupId(this.ingress.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for Ingress",
     );
 
     // バックエンドアプリ用のセキュリティグループのルール設定
-    sbcntrSgContainer.addIngressRule(
-      ec2.Peer.securityGroupId(this.sbcntrSgInternal.securityGroupId),
+    this.container.addIngressRule(
+      ec2.Peer.securityGroupId(this.internal.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for internal lb",
     );
 
     // VPCエンドポイント用のセキュリティグループのルール設定
-    this.sbcntrSgEgress.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgContainer.securityGroupId),
+    this.egress.addIngressRule(
+      ec2.Peer.securityGroupId(this.container.securityGroupId),
       ec2.Port.tcp(443),
       "HTTPS for container app",
     );
-    this.sbcntrSgEgress.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgFrontContainer.securityGroupId),
+    this.egress.addIngressRule(
+      ec2.Peer.securityGroupId(this.frontContainer.securityGroupId),
       ec2.Port.tcp(443),
       "HTTPS for front container app",
     );
 
-    this.sbcntrSgEgress.addIngressRule(
-      ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
+    this.egress.addIngressRule(
+      ec2.Peer.securityGroupId(this.management.securityGroupId),
       ec2.Port.tcp(443),
       "HTTPS for management server",
     );
-  }
-
-  getEgressSecurityGroup(): ec2.ISecurityGroup {
-    return this.sbcntrSgEgress;
-  }
-  getInternalSecurityGroup(): ec2.ISecurityGroup {
-    return this.sbcntrSgInternal;
   }
 }

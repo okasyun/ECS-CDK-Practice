@@ -18,6 +18,7 @@ export type SubnetType =
 
 export interface ISubnetResources {
   getL2Subnets(subnetType: SubnetType, uniqueSuffix: string): ISubnet[];
+  get1ABastionSubnet(uniqueSuffix: string): ISubnet;
   readonly subnets: Record<string, CfnSubnet[]>;
 }
 
@@ -32,7 +33,7 @@ export class SubnetResources extends Construct implements ISubnetResources {
     this.subnets = {
       // コンテナサブネット
       container: [
-        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateContainer1A", {
+        new ec2.CfnSubnet(this, "SubnetPrivateContainer1A", {
           vpcId,
           cidrBlock: "10.0.8.0/24",
           availabilityZone: azs[0],
@@ -40,11 +41,11 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-private-container-1a`,
+              value: `${props.stage}-subnet-private-container-1a`,
             },
           ],
         }),
-        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateContainer1C", {
+        new ec2.CfnSubnet(this, "SubnetPrivateContainer1C", {
           vpcId: vpcId,
           cidrBlock: "10.0.9.0/24",
           availabilityZone: azs[1],
@@ -52,14 +53,14 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-private-container-1c`,
+              value: `${props.stage}-subnet-private-container-1c`,
             },
           ],
         }),
       ],
       // データベースサブネット
       db: [
-        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateDb1A", {
+        new ec2.CfnSubnet(this, "SubnetPrivateDb1A", {
           vpcId: vpcId,
           cidrBlock: "10.0.16.0/24",
           availabilityZone: azs[0],
@@ -67,11 +68,11 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-private-db-1a`,
+              value: `${props.stage}-subnet-private-db-1a`,
             },
           ],
         }),
-        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateDb1C", {
+        new ec2.CfnSubnet(this, "SubnetPrivateDb1C", {
           vpcId: vpcId,
           cidrBlock: "10.0.17.0/24",
           availabilityZone: azs[1],
@@ -79,14 +80,14 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-private-db-1c`,
+              value: `${props.stage}-subnet-private-db-1c`,
             },
           ],
         }),
       ],
       // Ingress周りのサブネット
       ingress: [
-        new ec2.CfnSubnet(this, "SbcntrSubnetPublicIngress1A", {
+        new ec2.CfnSubnet(this, "SubnetPublicIngress1A", {
           vpcId: vpcId,
           cidrBlock: "10.0.0.0/24",
           availabilityZone: azs[0],
@@ -94,11 +95,11 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-public-ingress-1a`,
+              value: `${props.stage}-subnet-public-ingress-1a`,
             },
           ],
         }),
-        new ec2.CfnSubnet(this, "SbcntrSubnetPublicIngress1C", {
+        new ec2.CfnSubnet(this, "SubnetPublicIngress1C", {
           vpcId: vpcId,
           cidrBlock: "10.0.1.0/24",
           availabilityZone: azs[1],
@@ -106,14 +107,14 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-public-ingress-1c`,
+              value: `${props.stage}-subnet-public-ingress-1c`,
             },
           ],
         }),
       ],
       // Egress周りのサブネット
       egress: [
-        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateEgress1A", {
+        new ec2.CfnSubnet(this, "SubnetPrivateEgress1A", {
           vpcId: vpcId,
           cidrBlock: "10.0.248.0/24",
           availabilityZone: azs[0],
@@ -121,11 +122,11 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-private-egress-1a`,
+              value: `${props.stage}-subnet-private-egress-1a`,
             },
           ],
         }),
-        new ec2.CfnSubnet(this, "SbcntrSubnetPrivateEgress1C", {
+        new ec2.CfnSubnet(this, "SubnetPrivateEgress1C", {
           vpcId: vpcId,
           cidrBlock: "10.0.249.0/24",
           availabilityZone: azs[1],
@@ -133,7 +134,7 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-private-egress-1c`,
+              value: `${props.stage}-subnet-private-egress-1c`,
             },
           ],
         }),
@@ -141,7 +142,7 @@ export class SubnetResources extends Construct implements ISubnetResources {
 
       // 管理用サーバーのサブネット
       management: [
-        new ec2.CfnSubnet(this, "SbcntrSubnetPublicManagement1A", {
+        new ec2.CfnSubnet(this, "SubnetPublicManagement1A", {
           vpcId: vpcId,
           cidrBlock: "10.0.240.0/24",
           availabilityZone: azs[0],
@@ -149,11 +150,11 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-public-management-1a`,
+              value: `${props.stage}-subnet-public-management-1a`,
             },
           ],
         }),
-        new ec2.CfnSubnet(this, "SbcntrSubnetPublicManagement1C", {
+        new ec2.CfnSubnet(this, "SubnetPublicManagement1C", {
           vpcId: vpcId,
           cidrBlock: "10.0.241.0/24",
           availabilityZone: azs[1],
@@ -161,7 +162,7 @@ export class SubnetResources extends Construct implements ISubnetResources {
           tags: [
             {
               key: "Name",
-              value: `${props.stage}-sbcntr-subnet-public-management-1c`,
+              value: `${props.stage}-subnet-public-management-1c`,
             },
           ],
         }),
@@ -179,5 +180,13 @@ export class SubnetResources extends Construct implements ISubnetResources {
         subnet.ref,
       ),
     );
+  }
+
+  public get1ABastionSubnet(uniqueSuffix: string): ec2.ISubnet {
+    const cfnSubnet = this.subnets["management"][0];
+    return ec2.Subnet.fromSubnetAttributes(this, `management-l2-${uniqueSuffix}`, {
+  subnetId: cfnSubnet.ref,
+      availabilityZone: cfnSubnet.availabilityZone, // CfnSubnet から AZ を取得
+    });
   }
 }

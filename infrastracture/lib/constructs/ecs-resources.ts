@@ -1,31 +1,123 @@
 import { Construct } from "constructs";
 import { EcsPracticeStackProps } from "../ecs-practice-stack";
-import * as iam from "aws-cdk-lib/aws-iam";
-
+import { IRepository } from "aws-cdk-lib/aws-ecr";
+import * as ecs from "aws-cdk-lib/aws-ecs";
+import { CpuArchitecture, OperatingSystemFamily } from "aws-cdk-lib/aws-ecs";
+import { RemovalPolicy } from "aws-cdk-lib";
+import * as logs from "aws-cdk-lib/aws-logs";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import { DnsRecordType, PrivateDnsNamespace} from "aws-cdk-lib/aws-servicediscovery";
+import { Duration } from "aws-cdk-lib";
 interface EcsResourcesProps extends EcsPracticeStackProps {
   readonly stage: string;
+  readonly backendRepository: IRepository;
+  readonly frontendRepository: IRepository;
+  readonly subnets: ec2.ISubnet[];
+  readonly securityGroups: ec2.ISecurityGroup[];
+  readonly vpc: ec2.IVpc;
 }
 
-export class EcsResources extends Construct {
+interface IEcsResources {
+  // IFargateServiceを使うとloadBalancerTargetが使えない
+  // eslint-disable-next-line cdk/no-class-in-interface
+  readonly backendService: ecs.FargateService;
+}
+
+
+export class EcsResources extends Construct implements IEcsResources {
+  // eslint-disable-next-line  cdk/no-public-class-fields
+  public readonly backendService: ecs.FargateService;
+
   constructor(scope: Construct, id: string, props: EcsResourcesProps) {
     super(scope, id);
-    const { stage } = props;
+    const {
+      stage,
+      backendRepository,
+      frontendRepository,
+      vpc,
+      subnets,
+      securityGroups,
+    } = props;
 
-    // ECSがBLUEGREENデプロイを行うためのロールを作成
-    const ecsCodeDeployRole = new iam.Role(this, "EcsCodeDeployRole", {
-      assumedBy: new iam.ServicePrincipal("codedeploy.amazonaws.com"),
-      roleName: `${stage}-ecs-codedeploy-role`,
-      description:
-        "Role assumed by AWS CodeDeploy to perform ECS Blue/Green deployment",
-    });
-
-    // 必須のマネージドポリシーをアタッチ
-    ecsCodeDeployRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("AWSCodeDeployRoleForECS"),
+    // タスク定義を作成
+    const backendTaskDefinition = new ecs.FargateTaskDefinition(
+      this,
+      "BackendTaskDefinition",
+      {
+        family: `${stage}-backend-def`,
+        cpu: 512,
+        memoryLimitMiB: 1024,
+        runtimePlatform: {
+          cpuArchitecture: CpuArchitecture.X86_64,
+          operatingSystemFamily: OperatingSystemFamily.LINUX,
+        },
+      }
     );
 
-    // const cluster = new ecs.Cluster(this, "SbcntrCluster", {
-    //   clusterName: `${stage}-sbcntr-cluster`,
-    // });
+    // タグを指定してイメージを取得（例: gitのcommit hashや "latest" など）
+    const backendImage = ecs.ContainerImage.fromEcrRepository(
+      backendRepository,
+      "v1"
+    );
+    // const frontendImage = ecs.ContainerImage.fromEcrRepository(frontendRepository, "latest");
+
+    const backendLogGroup = new logs.LogGroup(this, "BackEndLogGroup", {
+      logGroupName: `/ecs/${stage}-app`,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    // コンテナ定義を作成
+    const backendContainerDefinition = backendTaskDefinition.addContainer(
+      "BackendContainer",
+      {
+        containerName: `${stage}-app`,
+        image: backendImage,
+        memoryReservationMiB: 512,
+        cpu: 256,
+        readonlyRootFilesystem: true,
+        portMappings: [
+          {
+            containerPort: 80,
+          },
+        ],
+        logging: ecs.LogDrivers.awsLogs({
+          logGroup: backendLogGroup,
+          streamPrefix: `${stage}-app`,
+        }),
+      }
+    );
+
+    const backendCluster = new ecs.Cluster(this, "BackendCluster", {
+      clusterName: `${stage}-ecs-backend-cluster`,
+      containerInsights: true,
+      vpc: vpc,
+    });
+
+    const dnsNamespace = new PrivateDnsNamespace(this, "ServiceDiscovery", {
+      name: "local",
+      vpc: vpc,
+    });
+
+    this.backendService = new ecs.FargateService(this, "BackendService", {
+      serviceName: `${stage}-backend-service`,
+      cluster: backendCluster,
+      taskDefinition: backendTaskDefinition,
+      platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
+      desiredCount: 2,
+      cloudMapOptions: {
+        name: `${stage}-ecs-backend-service`,
+        cloudMapNamespace: dnsNamespace,
+        dnsRecordType: DnsRecordType.A,
+        dnsTtl: Duration.seconds(60),
+      },
+      deploymentController: {
+        type: ecs.DeploymentControllerType.CODE_DEPLOY,
+      },
+      assignPublicIp: false,
+      vpcSubnets: {
+        subnets: subnets,
+      },
+      securityGroups: securityGroups,
+    });
   }
 }

@@ -1,25 +1,40 @@
 import { Construct } from "constructs";
 import { Repository } from "aws-cdk-lib/aws-ecr";
 import * as cdk from "aws-cdk-lib";
+import { IRepository } from "aws-cdk-lib/aws-ecr";
+import { EcsPracticeStackProps } from "../ecs-practice-stack";
 
-export interface RepositoryResourcesProps {
+
+interface RepositoryResourcesProps extends EcsPracticeStackProps {
   readonly stage: string;
 }
 
-export class RepositoryResources extends Construct {
+export interface IRepositoryResources {
+  readonly backendRepository: IRepository;
+  readonly frontendRepository: IRepository;
+}
+
+export class RepositoryResources extends Construct implements IRepositoryResources {
+  readonly backendRepository: IRepository;
+  readonly frontendRepository: IRepository;
+
   constructor(scope: Construct, id: string, props: RepositoryResourcesProps) {
     super(scope, id);
     const stage = props.stage.toLowerCase();
-    new Repository(this, `SbcntrBackendRepository`, {
-      repositoryName: `${stage}-sbcntr-backend`,
+    this.backendRepository = new Repository(this, `BackendRepository`, {
+      repositoryName: `${stage}-backend`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       emptyOnDelete: true,
     });
 
-    new Repository(this, `SbcntrFrontendRepository`, {
-      repositoryName: `${stage}-sbcntr-frontend`,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      emptyOnDelete: true,
-    });
+    this.frontendRepository = new Repository(
+      this,
+      `FrontendRepository`,
+      {
+        repositoryName: `${stage}-frontend`,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        emptyOnDelete: true,
+      },
+    );
   }
 }

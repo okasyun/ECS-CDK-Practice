@@ -15,7 +15,19 @@ interface AlbResourcesProps extends EcsPracticeStackProps {
   readonly stage: string;
 }
 
-export class AlbResources extends Construct {
+interface IAlbResources {
+  readonly blueTargetGroup: elbv2.IApplicationTargetGroup;
+  readonly greenTargetGroup: elbv2.IApplicationTargetGroup;
+  readonly httpListener: elbv2.IApplicationListener;
+  readonly testListener: elbv2.IApplicationListener;
+}
+  
+export class AlbResources extends Construct implements IAlbResources {
+  public readonly blueTargetGroup: elbv2.IApplicationTargetGroup;
+  public readonly greenTargetGroup: elbv2.IApplicationTargetGroup;
+  public readonly httpListener: elbv2.IApplicationListener;
+  public readonly testListener: elbv2.IApplicationListener;
+
   constructor(scope: Construct, id: string, props: AlbResourcesProps) {
     super(scope, id);
     const { vpc, subnets, securityGroups, stage } = props;
@@ -30,7 +42,7 @@ export class AlbResources extends Construct {
     });
 
     // Blue Target Group
-    const blueTargetGroup = new elbv2.ApplicationTargetGroup(
+    this.blueTargetGroup = new elbv2.ApplicationTargetGroup(
       this,
       "BlueTargetGroup",
       {
@@ -47,12 +59,12 @@ export class AlbResources extends Construct {
           interval: Duration.seconds(15),
           healthyHttpCodes: "200",
         },
-        targetGroupName: `${stage}-subcntr-tg-sbcntrdemo-blue`,
+        targetGroupName: `${stage}-subcntr-tg-demo-blue`,
       },
     );
 
     // Green Target Group
-    const greenTargetGroup = new elbv2.ApplicationTargetGroup(
+    this.greenTargetGroup = new elbv2.ApplicationTargetGroup(
       this,
       "GreenTargetGroup",
       {
@@ -69,30 +81,33 @@ export class AlbResources extends Construct {
           interval: Duration.seconds(15),
           healthyHttpCodes: "200",
         },
-        targetGroupName: `${stage}-subcntr-tg-sbcntrdemo-green`,
+        targetGroupName: `${stage}-subcntr-tg-demo-green`,
       },
     );
 
-    const httpListener = internalAlb.addListener("HTTPListener", {
+    this.httpListener = internalAlb.addListener("HTTPListener", {
       port: 80,
       protocol: ApplicationProtocol.HTTP,
       open: false,
+      defaultAction: elbv2.ListenerAction.forward([this.blueTargetGroup]),
+      
     });
 
     // Green Listener に TargetGroup を設定
-    const testListener = internalAlb.addListener("TestListener", {
+    this.testListener = internalAlb.addListener("TestListener", {
       port: 10080,
       protocol: elbv2.ApplicationProtocol.HTTP,
       open: false,
+      defaultAction: elbv2.ListenerAction.forward([this.greenTargetGroup]),
     });
 
     // Blue Listener に TargetGroup を設定
-    httpListener.addTargetGroups("BlueTGAttachment", {
-      targetGroups: [blueTargetGroup],
+    this.httpListener.addTargetGroups("BlueTGAttachment", {
+      targetGroups: [this.blueTargetGroup],
     });
 
-    testListener.addTargetGroups("GreenTGAttachment", {
-      targetGroups: [greenTargetGroup],
+    this.testListener.addTargetGroups("GreenTGAttachment", {
+      targetGroups: [this.greenTargetGroup],
     });
   }
 }

@@ -11,7 +11,7 @@ interface RouteTableResourcesProps extends EcsPracticeStackProps {
 }
 
 export class RouteTableResources extends Construct {
-  public readonly sbcntrRouteAppRef: string;
+  public readonly RouteAppRef: string;
 
   constructor(scope: Construct, id: string, props: RouteTableResourcesProps) {
     super(scope, id);
@@ -21,68 +21,68 @@ export class RouteTableResources extends Construct {
     const igwId = props.igwId;
 
     // アプリ用のルートテーブルの作成
-    const sbcntrRouteApp = new ec2.CfnRouteTable(this, "SbcntrRouteApp", {
+    const RouteApp = new ec2.CfnRouteTable(this, "RouteApp", {
       vpcId: vpc.vpcId,
       tags: [
         {
           key: "Name",
-          value: `${props.stage}-sbcntr-route-app`,
+          value: `${props.stage}-route-app`,
         },
       ],
     });
-    this.sbcntrRouteAppRef = sbcntrRouteApp.ref;
+    this.RouteAppRef = RouteApp.ref;
 
     // アプリ用のサブネットのルートテーブル関連付け
     new ec2.CfnSubnetRouteTableAssociation(
       this,
-      "SbcntrRouteAppAssociation1A",
+      "RouteAppAssociation1A",
       {
-        routeTableId: this.sbcntrRouteAppRef,
+        routeTableId: this.RouteAppRef,
         subnetId: subnets.container[0].ref,
       },
     );
 
     new ec2.CfnSubnetRouteTableAssociation(
       this,
-      "SbcntrRouteAppAssociation1C",
+      "RouteAppAssociation1C",
       {
-        routeTableId: this.sbcntrRouteAppRef,
+        routeTableId: this.RouteAppRef,
         subnetId: subnets.container[1].ref,
       },
     );
 
     // データベース用のルートテーブルの作成
-    const sbcntrRouteDb = new ec2.CfnRouteTable(this, "SbcntrRouteDb", {
+    const RouteDb = new ec2.CfnRouteTable(this, "RouteDb", {
       vpcId: vpc.vpcId,
       tags: [
         {
           key: "Name",
-          value: `${props.stage}-sbcntr-route-db`,
+          value: `${props.stage}-route-db`,
         },
       ],
     });
 
     // データベース用のサブネットのルートテーブル関連付け
-    new ec2.CfnSubnetRouteTableAssociation(this, "SbcntrRouteDbAssociation1A", {
-      routeTableId: sbcntrRouteDb.ref,
+    new ec2.CfnSubnetRouteTableAssociation(this, "RouteDbAssociation1A", {
+      routeTableId: RouteDb.ref,
       subnetId: subnets.db[0].ref,
     });
 
-    new ec2.CfnSubnetRouteTableAssociation(this, "SbcntrRouteDbAssociation1C", {
-      routeTableId: sbcntrRouteDb.ref,
+    new ec2.CfnSubnetRouteTableAssociation(this, "RouteDbAssociation1C", {
+      routeTableId: RouteDb.ref,
       subnetId: subnets.db[1].ref,
     });
 
     // Ingress用のルートテーブルの作成
-    const sbcntrRouteIngress = new ec2.CfnRouteTable(
+    const RouteIngress = new ec2.CfnRouteTable(
       this,
-      "SbcntrRouteIngress",
+      "RouteIngress",
       {
         vpcId: vpc.vpcId,
         tags: [
           {
             key: "Name",
-            value: `${props.stage}-sbcntr-route-ingress`,
+            value: `${props.stage}-route-ingress`,
           },
         ],
       },
@@ -91,18 +91,18 @@ export class RouteTableResources extends Construct {
     // Ingress用のサブネットのルートテーブル関連付け
     new ec2.CfnSubnetRouteTableAssociation(
       this,
-      "SbcntrRouteIngressAssociation1A",
+      "RouteIngressAssociation1A",
       {
-        routeTableId: sbcntrRouteIngress.ref,
+        routeTableId: RouteIngress.ref,
         subnetId: subnets.ingress[0].ref,
       },
     );
 
     new ec2.CfnSubnetRouteTableAssociation(
       this,
-      "SbcntrRouteIngressAssociation1C",
+      "RouteIngressAssociation1C",
       {
-        routeTableId: sbcntrRouteIngress.ref,
+        routeTableId: RouteIngress.ref,
         subnetId: subnets.ingress[1].ref,
       },
     );
@@ -110,25 +110,25 @@ export class RouteTableResources extends Construct {
     // 管理用サーバー用のルートテーブル関連付け
     new ec2.CfnSubnetRouteTableAssociation(
       this,
-      "SbcntrRouteManagementAssociation1A",
+      "RouteManagementAssociation1A",
       {
-        routeTableId: sbcntrRouteIngress.ref,
+        routeTableId: RouteIngress.ref,
         subnetId: subnets.management[0].ref,
       },
     );
 
     new ec2.CfnSubnetRouteTableAssociation(
       this,
-      "SbcntrRouteManagementAssociation1C",
+      "RouteManagementAssociation1C",
       {
-        routeTableId: sbcntrRouteIngress.ref,
+        routeTableId: RouteIngress.ref,
         subnetId: subnets.management[1].ref,
       },
     );
 
     // インターネット接続用のデフォルトルートを作成
-    new ec2.CfnRoute(this, "SbcntrRouteIngressDefault", {
-      routeTableId: sbcntrRouteIngress.ref,
+    new ec2.CfnRoute(this, "RouteIngressDefault", {
+      routeTableId: RouteIngress.ref,
       destinationCidrBlock: "0.0.0.0/0",
       gatewayId: igwId,
     });
