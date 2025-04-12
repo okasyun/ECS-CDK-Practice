@@ -3,17 +3,17 @@ import { Construct } from "constructs";
 import { EcsPracticeStackProps } from "../ecs-practice-stack";
 import { CfnSubnet } from "aws-cdk-lib/aws-ec2";
 
-interface RouteTableProps extends EcsPracticeStackProps {
+interface RouteTableResourcesProps extends EcsPracticeStackProps {
   readonly vpc: ec2.IVpc;
   readonly subnets: Record<string, CfnSubnet[]>;
   readonly igwId: string;
   readonly stage: string;
 }
 
-export class RouteTables extends Construct {
+export class RouteTableResources extends Construct {
   public readonly sbcntrRouteAppRef: string;
 
-  constructor(scope: Construct, id: string, props: RouteTableProps) {
+  constructor(scope: Construct, id: string, props: RouteTableResourcesProps) {
     super(scope, id);
 
     const vpc = props.vpc;

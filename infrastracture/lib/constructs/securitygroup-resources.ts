@@ -7,12 +7,15 @@ interface SecurityGroupProps extends EcsPracticeStackProps {
   readonly stage: string;
 }
 
-export interface ISecurityGroup {
+export interface ISecurityGroupResources {
   getEgressSecurityGroup(): ec2.ISecurityGroup;
   getInternalSecurityGroup(): ec2.ISecurityGroup;
 }
 
-export class SecurityGroups extends Construct implements ISecurityGroup {
+export class SecurityGroupResources
+  extends Construct
+  implements ISecurityGroupResources
+{
   private readonly sbcntrSgEgress: ec2.ISecurityGroup;
   private readonly sbcntrSgInternal: ec2.ISecurityGroup;
   constructor(scope: Construct, id: string, props: SecurityGroupProps) {
@@ -112,6 +115,12 @@ export class SecurityGroups extends Construct implements ISecurityGroup {
       ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
       ec2.Port.tcp(80),
       "HTTP for management server",
+    );
+
+    this.sbcntrSgInternal.addIngressRule(
+      ec2.Peer.securityGroupId(sbcntrSgManagement.securityGroupId),
+      ec2.Port.tcp(10080),
+      "Test port form management server",
     );
 
     // データベース用のセキュリティグループのルール設定

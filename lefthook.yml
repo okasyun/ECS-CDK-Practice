@@ -1,0 +1,24 @@
+pre-push:
+  jobs:
+    - name: packages audit
+      tags:
+        - frontend
+        - security
+      run: yarn audit
+
+    - name: gems audit
+      tags:
+        - backend
+        - security
+      run: bundle audit
+
+pre-commit:
+  parallel: false
+  jobs:
+    - name: eslint
+      run: npm run lint-fix {staged_files}
+      glob: "infrastructure/**/*.{js,ts}"
+
+    - name: prettier
+      glob: "infrastructure/**/*.{js,ts,jsx,tsx}"
+      run: npm run prettier {staged_files}

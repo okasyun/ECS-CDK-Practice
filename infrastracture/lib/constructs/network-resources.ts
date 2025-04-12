@@ -1,16 +1,19 @@
 import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { EcsPracticeStackProps } from "../ecs-practice-stack";
-import { SubnetResources } from "./subnet-resoucrces";
-import { SecurityGroups, ISecurityGroup } from "./security-groups";
-import { RouteTables } from "./route-tables";
+import { SubnetResources } from "./subnet-resources";
+import {
+  SecurityGroupResources,
+  ISecurityGroupResources,
+} from "./securitygroup-resources";
+import { RouteTableResources } from "./routetable-resources";
 import { InterfaceVpcEndpoint } from "aws-cdk-lib/aws-ec2";
 import { Tags } from "aws-cdk-lib";
-import { ISubnetf } from "./subnet-resoucrces";
+import { ISubnetResources } from "./subnet-resources";
 export class NetworkResources extends Construct {
   public readonly sbcntrVpc: ec2.IVpc;
-  public readonly sbcntrSubnets: ISubnetf;
-  public readonly sbcntrSecurityGroups: ISecurityGroup;
+  public readonly sbcntrSubnets: ISubnetResources;
+  public readonly sbcntrSecurityGroups: ISecurityGroupResources;
   constructor(scope: Construct, id: string, props: EcsPracticeStackProps) {
     super(scope, id);
     const { stage } = props;
@@ -23,7 +26,6 @@ export class NetworkResources extends Construct {
       enableDnsHostnames: true,
       enableDnsSupport: true,
     });
-    Tags.of(this.sbcntrVpc).add("Name", `${stage}-sbcntr-vpc`);
 
     // サブネットの作成
     this.sbcntrSubnets = new SubnetResources(this, "Subnets", {
@@ -42,13 +44,17 @@ export class NetworkResources extends Construct {
     });
 
     // セキュリティグループの作成
-    this.sbcntrSecurityGroups = new SecurityGroups(this, "SecurityGroups", {
-      vpc: this.sbcntrVpc,
-      stage,
-    });
+    this.sbcntrSecurityGroups = new SecurityGroupResources(
+      this,
+      "SecurityGroups",
+      {
+        vpc: this.sbcntrVpc,
+        stage,
+      },
+    );
 
     // ルートテーブルの関連付け
-    const sbcntrRouteTables = new RouteTables(this, "RouteTables", {
+    const sbcntrRouteTables = new RouteTableResources(this, "RouteTables", {
       vpc: this.sbcntrVpc,
       subnets: this.sbcntrSubnets.subnets,
       igwId: sbcntrIgw.ref,
@@ -63,7 +69,7 @@ export class NetworkResources extends Construct {
         vpc: this.sbcntrVpc,
         service: ec2.InterfaceVpcEndpointAwsService.ECR,
         subnets: {
-          subnets: this.sbcntrSubnets.getL2Subnets("egress"),
+          subnets: this.sbcntrSubnets.getL2Subnets("egress", "ecr"),
         },
         securityGroups: [this.sbcntrSecurityGroups.getEgressSecurityGroup()],
       },
@@ -75,7 +81,7 @@ export class NetworkResources extends Construct {
       vpc: this.sbcntrVpc,
       service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
       subnets: {
-        subnets: this.sbcntrSubnets.getL2Subnets("egress"),
+        subnets: this.sbcntrSubnets.getL2Subnets("egress", "dkr"),
       },
     });
     Tags.of(sbcntrVpceDkr).add("Name", `${stage}-sbcntr-vpce-dkr`);
@@ -94,7 +100,7 @@ export class NetworkResources extends Construct {
       vpc: this.sbcntrVpc,
       service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
       subnets: {
-        subnets: this.sbcntrSubnets.getL2Subnets("egress"),
+        subnets: this.sbcntrSubnets.getL2Subnets("egress", "logs"),
       },
     });
     Tags.of(sbcntrVpceLogs).add("Name", `${stage}-sbcntr-vpce-logs`);

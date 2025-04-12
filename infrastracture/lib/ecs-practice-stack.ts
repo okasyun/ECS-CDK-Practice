@@ -4,6 +4,7 @@ import { NetworkResources } from "./constructs/network-resources";
 import { StackProps } from "aws-cdk-lib";
 import { RepositoryResources } from "./constructs/repository-resources";
 import { AlbResources } from "./constructs/alb-resources";
+import { EcsResources } from "./constructs/ecs-resources";
 export interface EcsPracticeStackProps extends StackProps {
   readonly stage: string;
 }
@@ -19,7 +20,7 @@ export class EcsPracticeStack extends cdk.Stack {
     );
     const albResources = new AlbResources(this, "AlbResources", {
       vpc: networkResources.sbcntrVpc,
-      subnets: networkResources.sbcntrSubnets.getL2Subnets("ingress"),
+      subnets: networkResources.sbcntrSubnets.getL2Subnets("ingress", "alb"),
       securityGroups: [
         networkResources.sbcntrSecurityGroups.getInternalSecurityGroup(),
       ],
@@ -30,5 +31,7 @@ export class EcsPracticeStack extends cdk.Stack {
       "RepositoryResources",
       props,
     );
+
+    const ecsResources = new EcsResources(this, "EcsResources", props);
   }
 }

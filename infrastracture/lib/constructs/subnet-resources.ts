@@ -16,12 +16,12 @@ export type SubnetType =
   | "egress"
   | "management";
 
-export interface ISubnetf {
-  getL2Subnets(subnetType: SubnetType): ISubnet[];
+export interface ISubnetResources {
+  getL2Subnets(subnetType: SubnetType, uniqueSuffix: string): ISubnet[];
   readonly subnets: Record<string, CfnSubnet[]>;
 }
 
-export class SubnetResources extends Construct implements ISubnetf {
+export class SubnetResources extends Construct implements ISubnetResources {
   public readonly subnets: Record<string, CfnSubnet[]>;
 
   constructor(scope: Construct, id: string, props: SubnetProps) {
@@ -168,9 +168,16 @@ export class SubnetResources extends Construct implements ISubnetf {
       ],
     };
   }
-  public getL2Subnets(subnetType: SubnetType): ec2.ISubnet[] {
+  public getL2Subnets(
+    subnetType: SubnetType,
+    uniqueSuffix: string,
+  ): ec2.ISubnet[] {
     return this.subnets[subnetType].map((subnet, index) =>
-      ec2.Subnet.fromSubnetId(this, `${subnetType}-l2-${index}`, subnet.ref),
+      ec2.Subnet.fromSubnetId(
+        this,
+        `${subnetType}-l2-${index}-${uniqueSuffix}`,
+        subnet.ref,
+      ),
     );
   }
 }
