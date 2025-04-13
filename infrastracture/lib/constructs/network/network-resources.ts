@@ -1,13 +1,13 @@
 import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import { EcsPracticeStackProps } from "../ecs-practice-stack";
+import { EcsPracticeStackProps } from "../../ecs-practice-stack";
 import { SubnetResources } from "./subnet-resources";
 import {
   SecurityGroupResources,
   ISecurityGroupResources,
 } from "./securitygroup-resources";
 import { RouteTableResources } from "./routetable-resources";
-import { InterfaceVpcEndpoint } from "aws-cdk-lib/aws-ec2";
+import { InterfaceVpcEndpoint }  from "aws-cdk-lib/aws-ec2";
 import { Tags } from "aws-cdk-lib";
 import { ISubnetResources } from "./subnet-resources";
 export class NetworkResources extends Construct {

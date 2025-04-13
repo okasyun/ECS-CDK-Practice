@@ -1,17 +1,19 @@
 import { Construct } from "constructs";
-import { EcsPracticeStackProps } from "../ecs-practice-stack";
+import { EcsPracticeStackProps } from "../../ecs-practice-stack";
 import { IRepository } from "aws-cdk-lib/aws-ecr";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import { CpuArchitecture, OperatingSystemFamily } from "aws-cdk-lib/aws-ecs";
 import { RemovalPolicy } from "aws-cdk-lib";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import { DnsRecordType, PrivateDnsNamespace} from "aws-cdk-lib/aws-servicediscovery";
+import {
+  DnsRecordType,
+  PrivateDnsNamespace,
+} from "aws-cdk-lib/aws-servicediscovery";
 import { Duration } from "aws-cdk-lib";
-interface EcsResourcesProps extends EcsPracticeStackProps {
+interface BackendEcsResourcesProps extends EcsPracticeStackProps {
   readonly stage: string;
   readonly backendRepository: IRepository;
-  readonly frontendRepository: IRepository;
   readonly subnets: ec2.ISubnet[];
   readonly securityGroups: ec2.ISecurityGroup[];
   readonly vpc: ec2.IVpc;
@@ -23,17 +25,15 @@ interface IEcsResources {
   readonly backendService: ecs.FargateService;
 }
 
-
-export class EcsResources extends Construct implements IEcsResources {
+export class BackendEcsResources extends Construct implements IEcsResources {
   // eslint-disable-next-line  cdk/no-public-class-fields
   public readonly backendService: ecs.FargateService;
 
-  constructor(scope: Construct, id: string, props: EcsResourcesProps) {
+  constructor(scope: Construct, id: string, props: BackendEcsResourcesProps) {
     super(scope, id);
     const {
       stage,
       backendRepository,
-      frontendRepository,
       vpc,
       subnets,
       securityGroups,

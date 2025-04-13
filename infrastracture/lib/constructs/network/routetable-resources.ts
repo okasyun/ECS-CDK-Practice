@@ -1,6 +1,6 @@
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
-import { EcsPracticeStackProps } from "../ecs-practice-stack";
+import { EcsPracticeStackProps } from "../../ecs-practice-stack";
 import { CfnSubnet } from "aws-cdk-lib/aws-ec2";
 
 interface RouteTableResourcesProps extends EcsPracticeStackProps {

@@ -1,6 +1,6 @@
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
-import { EcsPracticeStackProps } from "../ecs-practice-stack";
+import { EcsPracticeStackProps } from "../../ecs-practice-stack";
 import { Tags } from "aws-cdk-lib";
 interface SecurityGroupProps extends EcsPracticeStackProps {
   readonly vpc: ec2.IVpc;
