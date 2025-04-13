@@ -20,7 +20,7 @@ export class RepositoryResources extends Construct implements IRepositoryResourc
 
   constructor(scope: Construct, id: string, props: RepositoryResourcesProps) {
     super(scope, id);
-    const stage = props.stage.toLowerCase();
+    const stage = props.stage;
     this.backendRepository = new Repository(this, `BackendRepository`, {
       repositoryName: `${stage}-backend`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,

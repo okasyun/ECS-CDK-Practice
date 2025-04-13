@@ -3,5 +3,8 @@
     "ap-northeast-1a",
     "ap-northeast-1c",
     "ap-northeast-1d"
-  ]
+  ],
+  "key-provider:account=637423478672:aliasName=alias/aws/secretsmanager:region=ap-northeast-1": {
+    "keyId": "7c6c1b60-a1a8-4730-b3fd-4e5ce9cca426"
+  }
 }

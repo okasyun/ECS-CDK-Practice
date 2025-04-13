@@ -9,6 +9,7 @@ import { BastionResources } from "./constructs/bastion-resources";
 import { PublicAlbResources } from "./constructs/alb/public-alb-resources";
 import { BackendEcsResources } from "./constructs/ecs/backend-ecs-resources";
 import { FrontendEcsResources } from "./constructs/ecs/frontend-ecs-resoureces";
+import { DatabaseResources } from "./constructs/database-resoureces";
 export interface EcsPracticeStackProps extends StackProps {
   readonly stage: string;
 }
@@ -89,6 +90,13 @@ export class EcsPracticeStack extends cdk.Stack {
       targetGroupGreen: internalAlbResources.greenTargetGroup,
       bglistener: internalAlbResources.httpListener,
       testListener: internalAlbResources.testListener,
+    });
+
+    const databaseResources = new DatabaseResources(this, "DatabaseResources", {
+      ...props,
+      vpc: networkResources.Vpc,
+      subnets: networkResources.Subnets.getL2Subnets("db", "aurora"),
+      securityGroup: networkResources.SecurityGroups.db,
     });
   }
 }

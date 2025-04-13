@@ -11,6 +11,7 @@ import {
   PrivateDnsNamespace,
 } from "aws-cdk-lib/aws-servicediscovery";
 import { Duration } from "aws-cdk-lib";
+import * as iam from "aws-cdk-lib/aws-iam";
 interface BackendEcsResourcesProps extends EcsPracticeStackProps {
   readonly stage: string;
   readonly backendRepository: IRepository;
@@ -31,13 +32,20 @@ export class BackendEcsResources extends Construct implements IEcsResources {
 
   constructor(scope: Construct, id: string, props: BackendEcsResourcesProps) {
     super(scope, id);
-    const {
-      stage,
-      backendRepository,
-      vpc,
-      subnets,
-      securityGroups,
-    } = props;
+    const { stage, backendRepository, vpc, subnets, securityGroups } = props;
+
+    // タスク実行ロールを作成
+    const taskExecutionRole = new iam.Role(this, "TaskExecutionRole", {
+      assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+    });
+
+    // SecretManagerのGetSecretValueポリシーを付与
+    taskExecutionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["secretsmanager:GetSecretValue"],
+        resources: ["*"]
+      })
+    );
 
     // タスク定義を作成
     const backendTaskDefinition = new ecs.FargateTaskDefinition(
@@ -47,6 +55,7 @@ export class BackendEcsResources extends Construct implements IEcsResources {
         family: `${stage}-backend-def`,
         cpu: 512,
         memoryLimitMiB: 1024,
+        executionRole: taskExecutionRole,
         runtimePlatform: {
           cpuArchitecture: CpuArchitecture.X86_64,
           operatingSystemFamily: OperatingSystemFamily.LINUX,

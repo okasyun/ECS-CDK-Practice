@@ -104,5 +104,16 @@ export class NetworkResources extends Construct {
       },
     });
     Tags.of(VpceLogs).add("Name", `${stage}-vpce-logs`);
+
+    // secretsmanager用のゲートウェイ型VPCエンドポイントの作成
+    const VpceSecrets = new ec2.InterfaceVpcEndpoint(this, "VpceSecrets", {
+      vpc: this.Vpc,
+      service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      subnets: {
+        subnets: this.Subnets.getL2Subnets("egress", "secretsmanager"),
+      },
+      securityGroups: [this.SecurityGroups.egress],
+    });
+    Tags.of(VpceSecrets).add("Name", `${stage}-vpce-secrets`);
   }
 }
