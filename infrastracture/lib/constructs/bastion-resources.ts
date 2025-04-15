@@ -3,6 +3,7 @@ import { EcsPracticeStackProps } from "../ecs-practice-stack";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 
 
+
 interface BastionResourcesProps extends EcsPracticeStackProps {
     readonly stage: string;
     readonly vpc: ec2.IVpc;
@@ -24,10 +25,9 @@ export class BastionResources extends Construct{
             ec2.InstanceSize.MICRO
           ),
           machineImage: new ec2.AmazonLinuxImage({
-            generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2023,
+            generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
           }),
           securityGroup: securityGroups[0],
-
         });
 
     }

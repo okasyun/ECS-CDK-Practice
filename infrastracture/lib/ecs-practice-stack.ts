@@ -24,7 +24,13 @@ export class EcsPracticeStack extends cdk.Stack {
       props
     );
 
-    const containerSubnets = networkResources.Subnets.getL2Subnets("container", "alb-and-ecs");
+    const bastionResources = new BastionResources(this, "BastionResources", {
+      ...props,
+      vpc: networkResources.Vpc,
+      subnets: [networkResources.Subnets.get1ABastionSubnet("bastion")],
+      securityGroups: [networkResources.SecurityGroups.management],
+    });
+
 
     const repositoryResources = new RepositoryResources(
       this,
@@ -32,14 +38,13 @@ export class EcsPracticeStack extends cdk.Stack {
       props
     );
 
-    const bastionResources = new BastionResources(this, "BastionResources", {
-      ...props,
-      vpc: networkResources.Vpc,
-      subnets: [networkResources.Subnets.get1ABastionSubnet("bastion")],
-      securityGroups: [networkResources.SecurityGroups.management],
-    });
-    
+  
 
+
+    const containerSubnets = networkResources.Subnets.getL2Subnets(
+      "container",
+      "alb-and-ecs"
+    );
     const internalAlbResources = new InternalAlbResources(
       this,
       "InternalAlbResources",

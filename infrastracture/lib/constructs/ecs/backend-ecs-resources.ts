@@ -2,7 +2,7 @@ import { Construct } from "constructs";
 import { EcsPracticeStackProps } from "../../ecs-practice-stack";
 import { IRepository } from "aws-cdk-lib/aws-ecr";
 import * as ecs from "aws-cdk-lib/aws-ecs";
-import { CpuArchitecture, OperatingSystemFamily } from "aws-cdk-lib/aws-ecs";
+import { CpuArchitecture, OperatingSystemFamily, Secret } from "aws-cdk-lib/aws-ecs";
 import { RemovalPolicy } from "aws-cdk-lib";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
@@ -12,6 +12,8 @@ import {
 } from "aws-cdk-lib/aws-servicediscovery";
 import { Duration } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as secrets from "aws-cdk-lib/aws-secretsmanager";
+import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 interface BackendEcsResourcesProps extends EcsPracticeStackProps {
   readonly stage: string;
   readonly backendRepository: IRepository;
@@ -35,7 +37,8 @@ export class BackendEcsResources extends Construct implements IEcsResources {
     const { stage, backendRepository, vpc, subnets, securityGroups } = props;
 
     // タスク実行ロールを作成
-    const taskExecutionRole = new iam.Role(this, "TaskExecutionRole", {
+    const taskExecutionRole = new iam.Role(this, "BackendTaskExecutionRole", {
+      roleName: `${stage}-backend-task-execution-role`,
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
     });
 
@@ -43,7 +46,7 @@ export class BackendEcsResources extends Construct implements IEcsResources {
     taskExecutionRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ["secretsmanager:GetSecretValue"],
-        resources: ["*"]
+        resources: ["*"],
       })
     );
 
@@ -75,6 +78,13 @@ export class BackendEcsResources extends Construct implements IEcsResources {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
+    // secret managerのarnを取得
+    const auroraSecret = secrets.Secret.fromSecretNameV2(
+      this,
+      "AuroraEncryptedSecret",
+      "mysql"
+    );
+
     // コンテナ定義を作成
     const backendContainerDefinition = backendTaskDefinition.addContainer(
       "BackendContainer",
@@ -91,8 +101,9 @@ export class BackendEcsResources extends Construct implements IEcsResources {
         ],
         logging: ecs.LogDrivers.awsLogs({
           logGroup: backendLogGroup,
-          streamPrefix: `${stage}-app`,
+          streamPrefix: "app",
         }),
+        secrets: this.getAuroraSecret(auroraSecret),
       }
     );
 
@@ -129,4 +140,14 @@ export class BackendEcsResources extends Construct implements IEcsResources {
       securityGroups: securityGroups,
     });
   }
+
+  private getAuroraSecret(secret: ISecret): Record<string, Secret> {
+    return {
+      DB_HOST: Secret.fromSecretsManager(secret, "host"),
+      DB_USERNAME: Secret.fromSecretsManager(secret, "username"),
+      DB_PASSWORD: Secret.fromSecretsManager(secret, "password"),
+      DB_NAME: Secret.fromSecretsManager(secret, "dbname"),
+    };
+  }
+  
 }
