@@ -12,13 +12,18 @@ import { FrontendEcsResources } from "./constructs/ecs/frontend-ecs-resoureces";
 import { DatabaseResources } from "./constructs/database-resoureces";
 import { CodeBuildResources } from "./constructs/cicd/codebuild-resources";
 import { CodepipelineResources } from "./constructs/cicd/codepipeline-resources";
+import { FirelensResources } from "./constructs/firelens-resources";
 export interface EcsPracticeStackProps extends StackProps {
   readonly stage: string;
+
+  
 }
 
 export class EcsPracticeStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsPracticeStackProps) {
     super(scope, id, props);
+
+    const { stage, env } = props;
 
     const networkResources = new NetworkResources(
       this,
@@ -83,6 +88,16 @@ export class EcsPracticeStack extends cdk.Stack {
         securityGroups: [networkResources.SecurityGroups.container],
       }
     );
+
+    const accountId = env?.account as string;
+
+    const firelensResources = new FirelensResources(this, "FirelensResources", {
+      ...props,
+      stage,
+      accountId,
+      backendTaskDefinition: backendEcsResources.backendTaskDefinition,
+      baseRepository: repositoryResources.baseRepository,
+    });
 
     internalAlbResources.blueTargetGroup.addTarget(
       backendEcsResources.backendService

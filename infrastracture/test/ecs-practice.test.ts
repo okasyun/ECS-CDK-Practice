@@ -8,7 +8,7 @@ test("Snapshot test", () => {
   // WHEN
   const stage = process.env.ENV || "Dev";
   const stackProps = getStackProps(stage);
-  const stack = new EcsPracticeStack(app, `${stage}-EcsPractice`, stackProps);
+  const stack = new EcsPracticeStack(app, `${stage}-EcsPractice`, {stage, ...stackProps});
   // THEN
   const template = Template.fromStack(stack);
   expect(template).toMatchSnapshot();

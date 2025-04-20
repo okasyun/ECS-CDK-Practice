@@ -31,7 +31,8 @@ interface IEcsResources {
 export class BackendEcsResources extends Construct implements IEcsResources {
   // eslint-disable-next-line  cdk/no-public-class-fields
   public readonly backendService: ecs.FargateService;
-
+  // eslint-disable-next-line  cdk/no-public-class-fields
+  public readonly backendTaskDefinition: ecs.TaskDefinition;
   constructor(scope: Construct, id: string, props: BackendEcsResourcesProps) {
     super(scope, id);
     const { stage, backendRepository, vpc, subnets, securityGroups } = props;
@@ -50,8 +51,14 @@ export class BackendEcsResources extends Construct implements IEcsResources {
       })
     );
 
+    const taskRole = iam.Role.fromRoleName(
+      this,
+      "TaskRole",
+      `${stage}-ecsTaskRole`
+    );
+
     // タスク定義を作成
-    const backendTaskDefinition = new ecs.FargateTaskDefinition(
+    this.backendTaskDefinition = new ecs.FargateTaskDefinition(
       this,
       "BackendTaskDefinition",
       {
@@ -59,6 +66,7 @@ export class BackendEcsResources extends Construct implements IEcsResources {
         cpu: 512,
         memoryLimitMiB: 1024,
         executionRole: taskExecutionRole,
+        taskRole: taskRole,
         runtimePlatform: {
           cpuArchitecture: CpuArchitecture.X86_64,
           operatingSystemFamily: OperatingSystemFamily.LINUX,
@@ -66,12 +74,11 @@ export class BackendEcsResources extends Construct implements IEcsResources {
       }
     );
 
-    // const frontendImage = ecs.ContainerImage.fromEcrRepository(frontendRepository, "latest");
-
-    const backendLogGroup = new logs.LogGroup(this, "BackEndLogGroup", {
-      logGroupName: `/ecs/${stage}-app`,
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
+    // タグを指定してイメージを取得（例: gitのcommit hashや "latest" など）
+    const backendImage = ecs.ContainerImage.fromEcrRepository(
+      backendRepository,
+      "v1"
+    );
 
     // secret managerのarnを取得
     const auroraSecret = secrets.Secret.fromSecretNameV2(
@@ -81,11 +88,11 @@ export class BackendEcsResources extends Construct implements IEcsResources {
     );
 
     // コンテナ定義を作成
-    const backendContainerDefinition = backendTaskDefinition.addContainer(
+    const backendContainerDefinition = this.backendTaskDefinition.addContainer(
       "BackendContainer",
       {
         containerName: `app`,
-        image: ecs.ContainerImage.fromRegistry("PLACEHOLDER"),
+        image: backendImage,
         memoryReservationMiB: 512,
         cpu: 256,
         readonlyRootFilesystem: true,
@@ -94,13 +101,13 @@ export class BackendEcsResources extends Construct implements IEcsResources {
             containerPort: 80,
           },
         ],
-        logging: ecs.LogDrivers.awsLogs({
-          logGroup: backendLogGroup,
-          streamPrefix: "app",
+        logging: ecs.LogDrivers.firelens({
+          options: {},
         }),
         secrets: this.getAuroraSecret(auroraSecret),
       }
     );
+
 
     const backendCluster = new ecs.Cluster(this, "BackendCluster", {
       clusterName: `${stage}-ecs-backend-cluster`,
@@ -116,7 +123,7 @@ export class BackendEcsResources extends Construct implements IEcsResources {
     this.backendService = new ecs.FargateService(this, "BackendService", {
       serviceName: `${stage}-backend-service`,
       cluster: backendCluster,
-      taskDefinition: backendTaskDefinition,
+      taskDefinition: this.backendTaskDefinition,
       platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
       desiredCount: 2,
       cloudMapOptions: {
@@ -133,6 +140,17 @@ export class BackendEcsResources extends Construct implements IEcsResources {
         subnets: subnets,
       },
       securityGroups: securityGroups,
+
+    });
+
+    const autoscale = this.backendService.autoScaleTaskCount({
+      minCapacity: 2,
+      maxCapacity: 4,
+    });
+
+    autoscale.scaleOnCpuUtilization("CpuScaling", {
+      targetUtilizationPercent: 80,
+      policyName: "ecs-scalingPolicy",
     });
   }
 
