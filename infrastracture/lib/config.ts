@@ -1,11 +1,16 @@
 import { StackProps } from "aws-cdk-lib";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 export const getStackProps = (stage: string): StackProps => {
+  const account = process.env.AWS_ACCOUNT_ID;
+
   switch (stage) {
     case "Prod":
       return {
         env: {
-          account: "637423478672",
+          account: account,
           region: "ap-northeast-1",
         },
         terminationProtection: true,
@@ -13,7 +18,7 @@ export const getStackProps = (stage: string): StackProps => {
     default:
       return {
         env: {
-          account: "637423478672",
+          account: account,
           region: "ap-northeast-1",
         },
       };

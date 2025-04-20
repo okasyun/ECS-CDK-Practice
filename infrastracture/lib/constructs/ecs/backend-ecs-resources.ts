@@ -66,11 +66,6 @@ export class BackendEcsResources extends Construct implements IEcsResources {
       }
     );
 
-    // タグを指定してイメージを取得（例: gitのcommit hashや "latest" など）
-    const backendImage = ecs.ContainerImage.fromEcrRepository(
-      backendRepository,
-      "v1"
-    );
     // const frontendImage = ecs.ContainerImage.fromEcrRepository(frontendRepository, "latest");
 
     const backendLogGroup = new logs.LogGroup(this, "BackEndLogGroup", {
@@ -89,8 +84,8 @@ export class BackendEcsResources extends Construct implements IEcsResources {
     const backendContainerDefinition = backendTaskDefinition.addContainer(
       "BackendContainer",
       {
-        containerName: `${stage}-app`,
-        image: backendImage,
+        containerName: `app`,
+        image: ecs.ContainerImage.fromRegistry("PLACEHOLDER"),
         memoryReservationMiB: 512,
         cpu: 256,
         readonlyRootFilesystem: true,

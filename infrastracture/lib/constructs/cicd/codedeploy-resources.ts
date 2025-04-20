@@ -1,8 +1,8 @@
 import { Construct } from "constructs";
-import { EcsPracticeStackProps } from "../ecs-practice-stack";
+import { EcsPracticeStackProps } from "../../ecs-practice-stack";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as codedeploy from "aws-cdk-lib/aws-codedeploy";
-import * as ecs from "aws-cdk-lib/aws-ecs"; 
+import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as cdk from "aws-cdk-lib";
 
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
@@ -16,7 +16,15 @@ interface CodeDeployResourcesProps extends EcsPracticeStackProps {
   readonly testListener: elbv2.IApplicationListener;
 }
 
-export class CodeDeployResources extends Construct {
+interface ICodeDeployResources {
+  readonly codedeploymentGroup: codedeploy.IEcsDeploymentGroup;
+}
+
+export class CodeDeployResources
+  extends Construct
+  implements ICodeDeployResources
+{
+  public readonly codedeploymentGroup: codedeploy.IEcsDeploymentGroup;
   constructor(scope: Construct, id: string, props: CodeDeployResourcesProps) {
     super(scope, id);
 
@@ -46,36 +54,23 @@ export class CodeDeployResources extends Construct {
       applicationName: `${stage}-bluegreen-app`,
     });
     // デプロイグループの作成
-    new codedeploy.EcsDeploymentGroup(this, "BlueGreenDG", {
-      application: application,
-      deploymentGroupName: `${stage}-bluegreen-dg`,
-      service: ecsFargateService,
-      blueGreenDeploymentConfig: {
-        blueTargetGroup: targetGroupBlue,
-        greenTargetGroup: targetGroupGreen,
-        listener: bglistener,
-        testListener: testListener,
-        deploymentApprovalWaitTime: cdk.Duration.minutes(10), // Greenへの切り替わりを10分待機
-        terminationWaitTime: cdk.Duration.minutes(69), // 新しいタスクの開始後、古いタスクの停止までの待機時間
-      },
-      role: ecsCodeDeployRole,
-    });
-
-    // CodeDeployのアプリケーションとデプロイグループの参照
-    const app = codedeploy.ServerApplication.fromServerApplicationName(
+    this.codedeploymentGroup = new codedeploy.EcsDeploymentGroup(
       this,
-      "ExistingApp",
-      `${stage}-bluegreen-app`
+      "BlueGreenDG",
+      {
+        application: application,
+        deploymentGroupName: `${stage}-bluegreen-dg`,
+        service: ecsFargateService,
+        blueGreenDeploymentConfig: {
+          blueTargetGroup: targetGroupBlue,
+          greenTargetGroup: targetGroupGreen,
+          listener: bglistener,
+          testListener: testListener,
+          deploymentApprovalWaitTime: cdk.Duration.minutes(10), // Greenへの切り替わりを10分待機
+          terminationWaitTime: cdk.Duration.minutes(69), // 新しいタスクの開始後、古いタスクの停止までの待機時間
+        },
+        role: ecsCodeDeployRole,
+      }
     );
-    const deploymentGroup =
-      codedeploy.ServerDeploymentGroup.fromServerDeploymentGroupAttributes(
-        this,
-        "ExistingDG",
-        {
-          application: app,
-          deploymentGroupName: `${stage}-bluegreen-dg`,
-        }
-      );
   }
-
 }

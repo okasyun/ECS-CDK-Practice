@@ -95,7 +95,7 @@ export class FrontendEcsResources
     const frontendContainerDefinition = frontendTaskDefinition.addContainer(
       "FrontendContainer",
       {
-        containerName: `${stage}-app`,
+        containerName: `app`,
         image: fronendImage,
         memoryReservationMiB: 512,
         cpu: 256,
