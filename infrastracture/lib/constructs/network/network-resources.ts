@@ -115,5 +115,26 @@ export class NetworkResources extends Construct {
       securityGroups: [this.SecurityGroups.egress],
     });
     Tags.of(VpceSecrets).add("Name", `${stage}-vpce-secrets`);
+
+    // ssm用のインターフェース型VPCエンドポイントの作成
+    const VpceSsmMessages = new InterfaceVpcEndpoint(this, "VpceSsmMessages", {
+      vpc: this.Vpc,
+      service: ec2.InterfaceVpcEndpointAwsService.SSM_MESSAGES,
+      subnets: {
+        subnets: this.Subnets.getL2Subnets("egress", "ssm-messages"),
+      },
+      securityGroups: [this.SecurityGroups.egress],
+    }); 
+    Tags.of(VpceSsmMessages).add("Name", `${stage}-vpce-ssm-messages`);
+
+    const VpceSsm = new InterfaceVpcEndpoint(this, "VpceSsm", {
+      vpc: this.Vpc,
+      service: ec2.InterfaceVpcEndpointAwsService.SSM,
+      subnets: {
+        subnets: this.Subnets.getL2Subnets("egress", "ssm"),
+      },
+      securityGroups: [this.SecurityGroups.egress],
+    });
+    Tags.of(VpceSsm).add("Name", `${stage}-vpce-ssm`);
   }
 }

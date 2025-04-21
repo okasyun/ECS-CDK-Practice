@@ -13,6 +13,7 @@ import { DatabaseResources } from "./constructs/database-resoureces";
 import { CodeBuildResources } from "./constructs/cicd/codebuild-resources";
 import { CodepipelineResources } from "./constructs/cicd/codepipeline-resources";
 import { FirelensResources } from "./constructs/firelens-resources";
+import { FargateBastionResources } from "./constructs/ecs/fargate-bastion-resources";
 export interface EcsPracticeStackProps extends StackProps {
   readonly stage: string;
 
@@ -31,12 +32,12 @@ export class EcsPracticeStack extends cdk.Stack {
       props
     );
 
-    const bastionResources = new BastionResources(this, "BastionResources", {
-      ...props,
-      vpc: networkResources.Vpc,
-      subnets: [networkResources.Subnets.get1ABastionSubnet("bastion")],
-      securityGroups: [networkResources.SecurityGroups.management],
-    });
+    // const bastionResources = new BastionResources(this, "BastionResources", {
+    //   ...props,
+    //   vpc: networkResources.Vpc,
+    //   subnets: [networkResources.Subnets.get1ABastionSubnet("bastion")],
+    //   securityGroups: [networkResources.SecurityGroups.management],
+    // });
 
     const repositoryResources = new RepositoryResources(
       this,
@@ -118,6 +119,18 @@ export class EcsPracticeStack extends cdk.Stack {
 
     publicAlbResources.frontendTargetGroup.addTarget(
       frontendEcsResources.frontendService
+    );
+
+    const fargateBastionResources = new FargateBastionResources(
+      this,
+      "FargateBastionResources",
+      {
+        ...props,
+        baseRepository: repositoryResources.baseRepository,
+        vpc: networkResources.Vpc,
+        subnets: containerSubnets,
+        securityGroups: [networkResources.SecurityGroups.container],
+      }
     );
 
     const codeDeployResources = new CodeDeployResources(
